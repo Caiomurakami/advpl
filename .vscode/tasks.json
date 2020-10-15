@@ -1,0 +1,18 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Iniciar Appserver WS LB",
+            "type": "shell",
+            "command": "Start-Process 'C:\\AP\\lobo-guara\\bin\\appserver-ws\\appserverws.exe' -ArgumentList -console",
+            "presentation": {
+                "echo": true,
+                "reveal": "never",
+                "panel": "new",
+                "showReuseMessage": false
+            }
+        }
+    ]
+}

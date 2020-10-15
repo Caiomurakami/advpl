@@ -1,0 +1,18 @@
+{
+	"version": "0.2.0",
+	"configurations": [
+		
+		{
+			"name": "Advpl Debug",
+			"type": "advpl",
+			"request": "launch",
+			"args": [],
+			"cwd": "${workspaceRoot}",
+			"programRun": "${command:AskForProgramName}",
+			"stopOnEntry": false,
+			"enviromentInfo": "${command:GetEnvInfos}",
+			"workspace": "${workspaceRoot}/"
+			//"smartclientBin": "C:\\P12\\P12_17_TST\\Bin\\smartclient\\smartclient.exe"
+		}
+	]
+}

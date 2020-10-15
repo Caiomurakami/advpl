@@ -1,0 +1,115 @@
+{
+    "advpl.projectActive": "Workspace_VSSCODE",
+    "advpl.selectedEnvironment": "P12_17_TST",
+    "advpl.workspaceFolders": "c:\\Workspace_VSSCODE;",
+    "advpl.environments": [
+        {
+            "name": "P12_17_TST",
+            "smartClientPath": "C:\\P12\\P12_17_TST\\Bin\\smartclient\\",
+            "environment": "P12_17_TST",
+            "includeList": "C:\\Includes\\",
+            "server": "localhost",
+            "port": "1980",
+            "serverVersion": "191205P",
+            "user": "Admin",
+            "passwordCipher": "TDfT0bfC69PmM3a7NVoLRDXTFX7oLGnzuyHQ7AN/x76s077rLdDhry6+Y3n/HFGUAACjyq6AT4pizTCoHoI6EUFx=",
+            "enable": true,
+            "ssl": false
+        },
+        {
+            "environment": "Environment",
+            "name": "Environment",
+            "server": "187.94.56.102",
+            "port": "8081",
+            "serverVersion": "191205P",
+            "passwordCipher": "v/62ZfRfGedp7nSZt8tsy1mg02xJ4ZI/otmCe9H+xGoParIS1Kj5IkO/Bdl/yOA4AAm9rdBkJnJWnVravhNYNjaz=",
+            "includeList": "c:\\Includes\\",
+            "user": "Admin",
+            "smartClientPath": "c:\\P12\\Claudinei\\smartclient",
+            "ssl": true
+        },
+        {
+            "environment": "P12125MNTDB",
+            "name": "P12125MNTDB",
+            "server": "localhost",
+            "port": "1980",
+            "serverVersion": "191205P",
+            "passwordCipher": "BisdHN8MfEiMGS5YyWV4AkoK0j6dq0EmcFxUAuHursYldqDx48oKX9aUyrS6k1q5AAT+kuHf7IikorWdLFNQGekf=",
+            "includeList": "c:\\Includes\\",
+            "user": "admin",
+            "smartClientPath": "c:\\P12\\P12_17_TST\\Bin\\smartclient\\",
+            "enable": true,
+            "ssl": false
+        },
+        {
+            "environment": "AM25",
+            "name": "AM25",
+            "server": "10.173.16.153",
+            "port": "1255",
+            "serverVersion": "191205P",
+            "passwordCipher": "/r38EXAYxn+NS5w/UUzTrk9AZ75TvCzcjHThbapgrGmM4m1cli8atq/XYL75xFIFAAANyCm3lI0TwaYuZF532iab=",
+            "includeList": "c:\\Includes\\",
+            "user": "admin",
+            "smartClientPath": "c:\\P12\\P12_17_TST\\Bin\\smartclient\\",
+            "enable": true,
+            "ssl": true
+        },
+        {
+            "environment": "mp12_1_25",
+            "name": "mp12_1_25",
+            "server": "10.173.3.207",
+            "port": "1988",
+            "serverVersion": "191205P",
+            "passwordCipher": "ty8pBPVqSNLX7Trl1WFvGWGIdtsrIf/DSRfqccKe+Ce8mCwtO0/z4CI+AkvQb4USAAE51VVGCYBLNojSR4wDBunr=",
+            "includeList": "c:\\Includes\\",
+            "user": "ADMIN",
+            "smartClientPath": "c:\\P12\\P12_17_TST\\Bin\\smartclient\\",
+            "enable": true,
+            "ssl": false
+        },
+        {
+            "environment": "P12_27",
+            "name": "P12_27",
+            "server": "localhost",
+            "port": "1981",
+            "serverVersion": "191205P",
+            "passwordCipher": "7KtOEzPFgKyyvufif84rhth8JuPpcVoq2T4yuH2L8syBkmnnKsovaWhIGPBtBR/kAARZ1kJ4mTinYTe506redz/n=",
+            "includeList": "c:\\Includes\\",
+            "user": "admin",
+            "smartClientPath": "c:\\P12\\P12_27\\bin\\smartclient\\",
+            "enable": true,
+            "ssl": false
+        },
+        {
+            "environment": "TMS",
+            "name": "TMS-guilherme",
+            "server": "10.173.12.203",
+            "port": "5798",
+            "serverVersion": "191205P",
+            "passwordCipher": "S4suu/Fbhqh/OQZrGYUXkphyUce6ZOojcMdclm0U5alrwh5nb7B+RS0zLhKYvdmrAACpOffFpgnzoW+pszCs0T8y=",
+            "includeList": "c:\\Includes\\",
+            "user": "admin",
+            "smartClientPath": "c:\\P12\\P12_17_TST\\Bin\\smartclient\\",
+            "enable": true,
+            "ssl": true
+        },
+        {
+            "environment": "P12LB12125",
+            "name": "P12LB12125",
+            "server": "localhost",
+            "port": "1980",
+            "serverVersion": "191205P",
+            "passwordCipher": "g2lW7y6NotXhyMZYxxUMzZPM0ruf6wfb+iOWPl+ZxzGG/JHHHC8/sQKDexOcl6gbAABanIlQ4UASEedFTQWYauIr=",
+            "includeList": "c:\\Includes\\",
+            "user": "Admin",
+            "smartClientPath": "c:\\P12\\P12_17_TST\\Bin\\smartclient\\",
+            "enable": true,
+            "ssl": false
+        }
+    ],
+    "advpl.debug_multiThread": false,
+    "files.associations": {
+    
+    
+    }
+} 

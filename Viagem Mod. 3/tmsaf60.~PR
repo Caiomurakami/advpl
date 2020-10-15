@@ -1,0 +1,2106 @@
+#INCLUDE "PROTHEUS.CH"
+#INCLUDE "TMSAF60.CH"
+#INCLUDE "FWMVCDEF.CH"
+
+Static cTMSOPdg := SuperGetMV( 'MV_TMSOPDG',, '0' )
+Static lTMS3GFE := .F.//TmsIntGFE('02')
+Static lIncMot  := .F.
+
+/*{Protheus.doc} TMSAF60
+    Viagem Modelo 3
+    @type Function
+    @author Valdemar Roberto Mognon
+    @since 23/05/2020
+    @version P12 R12.1.29
+    @param param, param_type, param_descr
+    @return return, return_type, return_description
+    @example TMSAF60()
+    (examples)
+    @see (links_or_references)
+*/
+Function TMSAF60()
+Local cCadastro := STR0001	//-- Viagem Modelo 3
+Local cPerg     := "TMSAF60"
+Local aCoors    := FWGetDialogSize( oMainWnd )   
+Local aSetKey   := {}
+Local oPanelUp, oFWLayer, oPanelDUD, oPanelDUA, oBrowseUp, oBrowseDown, oBrowseDUA, oRelacDM3, oRelacDUA
+
+Private oDlgPrinc  
+
+Aadd(aSetKey,{VK_F12,{|| Pergunte(cPerg,.T.)}})
+
+TmsKeyOn(aSetKey)
+
+DEFINE MSDIALOG oDlgPrinc TITLE cCadastro FROM aCoors[1], aCoors[2] To aCoors[3], aCoors[4] PIXEL
+
+oFWLayer := FWLayer():New() //-- Cria novo Layer
+oFWLayer:Init( oDlgPrinc, .F., .T. )
+oFWLayer:AddLine( 'UP', 60, .F. ) //-- Adiciona linha com 45% da tela
+oFWLayer:AddCollumn( 'ALL', 100, .T., 'UP' ) //-- Adiciona coluna com 100% da tela
+oPanelUp := oFWLayer:GetColPanel( 'ALL', 'UP' )  
+
+oFWLayer:AddLine( 'DOWN', 40, .F. )//-- Adiciona linha com 55% da tela 
+oFWLayer:AddCollumn( 'LEFT' , 50, .T., 'DOWN' )//-- Coluna para a linha adicionada com 100% da tela	
+oFWLayer:AddCollumn( 'RIGTH' , 50, .T., 'DOWN' )//-- Coluna para a linha adicionada com 100% da tela	
+oPanelDUD 	:= oFWLayer:GetColPanel( 'LEFT' , 'DOWN' ) 
+oPanelDUA	:= oFWLayer:GetColPanel('RIGTH','DOWN')
+
+//-- Browse superior vinculado com estrutura oPanelUp criada
+oBrowseUp:= FWmBrowse():New()
+oBrowseUp:SetOwner( oPanelUp )
+oBrowseUp:SetDescription( cCadastro )
+oBrowseUp:SetAlias( 'DTQ' )
+oBrowseUp:SetMenuDef( 'TMSAF60' )
+oBrowseUp:DisableDetails() 
+oBrowseUp:SetProfileID( '1' ) 
+oBrowseUp:ForceQuitButton()
+oBrowseUp:AddLegend( "DTQ_STATUS=='1'", "GREEN"	 , STR0011 	) //-- Em Aberto
+oBrowseUp:AddLegend( "DTQ_STATUS=='5'", "RED"	 , STR0012  ) //-- Fechada
+oBrowseUp:AddLegend( "DTQ_STATUS=='2'", "YELLOW" , STR0013  ) //-- Em Transito
+oBrowseUp:AddLegend( "DTQ_STATUS=='4'", "ORANGE" , STR0014  ) //-- Chegada em Filial.
+oBrowseUp:AddLegend( "DTQ_STATUS=='3'", "BLUE"	 , STR0015 	) //-- Encerrada
+oBrowseUp:AddLegend( "DTQ_STATUS=='9'", "BLACK"	 , STR0016 	) //-- Cancelada
+oBrowseUp:Activate()
+
+//-- Browse superior vinculado com estrutura oPanelDUDcriada
+oBrowseDown:= FWMBrowse():New()
+oBrowseDown:SetOwner( oPanelDUD )
+oBrowseDown:SetDescription( STR0004 ) //-- Documentos Embarcados
+oBrowseDown:SetMenuDef( '' )
+oBrowseDown:AddButton(STR0027, {|| TMSAF64NFC()},,3,,.F. ) //NF Cliente 
+oBrowseDown:DisableDetails()
+oBrowseDown:SetAlias( 'DM3' ) 	
+oBrowseDown:SetProfileID( '2' )
+oBrowseDown:AddLegend( "TF60DudStat(DM3_FILDOC,DM3_DOC,DM3_SERIE,DM3_FILORI,DM3_VIAGEM)=='1'", "GREEN"	 , STR0011 	) //-- Em Aberto
+oBrowseDown:AddLegend( "TF60DudStat(DM3_FILDOC,DM3_DOC,DM3_SERIE,DM3_FILORI,DM3_VIAGEM)=='2'", "YELLOW" , STR0013  ) //-- Em Transito
+oBrowseDown:AddLegend( "TF60DudStat(DM3_FILDOC,DM3_DOC,DM3_SERIE,DM3_FILORI,DM3_VIAGEM)=='3'", "RED"	 , STR0012  ) //-- Fechada
+oBrowseDown:AddLegend( "TF60DudStat(DM3_FILDOC,DM3_DOC,DM3_SERIE,DM3_FILORI,DM3_VIAGEM)=='4'", "BLUE"	 , STR0015 	) //-- Encerrada
+oBrowseDown:AddLegend( "TF60DudStat(DM3_FILDOC,DM3_DOC,DM3_SERIE,DM3_FILORI,DM3_VIAGEM)=='9'", "BLACK"	 , STR0016 	) //-- Cancelada
+oBrowseDown:Activate()
+
+//-- Browse superior vinculado com estrutura oPanelDUAcriada
+oBrowseDUA:= FWMBrowse():New()
+oBrowseDUA:SetOwner( oPanelDUA )
+oBrowseDUA:SetDescription( STR0017 ) //--"Ocorrências da Viagem" 
+oBrowseDUA:SetMenuDef( '' )
+oBrowseDUA:DisableDetails()
+oBrowseDUA:SetAlias( 'DUA' ) 	
+oBrowseDUA:SetProfileID( '3' )
+oBrowseDUA:Activate()
+
+//-- Realiza relacionamento entre os 2 browses criados 
+oRelacDM3:= FWBrwRelation():New()
+oRelacDM3:AddRelation( oBrowseUp , oBrowseDown , { {"DM3_FILIAL","xFilial('DM3')" },{"DM3_FILORI","DTQ_FILORI"},{"DM3_VIAGEM","DTQ_VIAGEM"}} )
+oRelacDM3:Activate()
+
+//-- Realiza relacionamento entre os 2 browses criados 
+oRelacDUA:= FWBrwRelation():New()
+oRelacDUA:AddRelation( oBrowseUp , oBrowseDUA , { {"DUA_FILIAL","xFilial('DUA')" },{"DUA_FILORI","DTQ_FILORI"},{"DUA_VIAGEM","DTQ_VIAGEM"}} )
+oRelacDUA:Activate()
+
+ACTIVATE MSDIALOG oDlgPrinc CENTER 
+
+TmsKeyOff(aSetKey)
+Return
+
+/*{Protheus.doc} ModelDef
+    Definição do Modelo
+    @type Static Function
+    @author Valdemar Roberto Mognon
+    @since 23/05/2020
+    @version P12 R12.1.20
+    @param param, param_type, param_descr
+    @return return, return_type, return_description
+    @example ModelDef()
+    (examples)
+    @see (links_or_references)
+*/
+Static Function ModelDef()
+Local oModel
+Local oStruDTQ  := FwFormStruct(1,"DTQ")
+Local oStruDM3  := FwFormStruct(1,"DM3")
+Local oStruDM4  := FwFormStruct(1,"DM4")
+Local oStruDM5  := FwFormStruct(1,"DM5")
+Local oStruDTR  := FwFormStruct(1,"DTR")
+Local oStruDUP  := FwFormStruct(1,"DUP")
+Local oStruDUQ  := FwFormStruct(1,"DUQ")
+Local oStruDVB  := FwFormStruct(1,"DVB")
+Local oStruSDG  := Nil
+Local oStruDVW  := FwFormStruct(1,"DVW")
+Local oStruDLD  := FwFormStruct(1,"DLD")
+Local oStruDM8  := FwFormStruct(1,"DM8")
+Local oStruDJN  := FwFormStruct(1,"DJN")
+Local bLinPreDM3 := {|oModel,nLine,cAction,cIDField,xValue,xCurrentValue| TMSAF63(oModel,nLine,cAction,cIDField,xValue,xCurrentValue,"PRE")}
+Local bLinPreDTR := {|oModel,nLine,cAction,cIDField,xValue,xCurrentValue| TMSAF63(oModel,nLine,cAction,cIDField,xValue,xCurrentValue,"PRE")}
+Local bLinPreDUP := {|oModel,nLine,cAction,cIDField,xValue,xCurrentValue| TMSAF63(oModel,nLine,cAction,cIDField,xValue,xCurrentValue,"PRE")}
+Local bLinPreDVW := {|oModel,nLine,cAction,cIDField,xValue,xCurrentValue| TMSAF63(oModel,nLine,cAction,cIDField,xValue,xCurrentValue,"PRE")}
+Local bLinPreDLD := {|oModel,nLine,cAction,cIDField,xValue,xCurrentValue| TMSAF63(oModel,nLine,cAction,cIDField,xValue,xCurrentValue,"PRE")}
+Local bLinPreGFE := {|oModel,nLine,cAction,cIDField,xValue,xCurrentValue| TMSAF63G(oModel,nLine,cAction,cIDField,xValue,xCurrentValue,"PRE")}
+Local bLinPosDM3 := {|oModel,nLine,cAction,cIDField| TMSAF63(oModel,nLine,cAction,cIDField,,,"POS")} 
+Local bLinPosDTR := {|oModel,nLine,cAction,cIDField| TMSAF63(oModel,nLine,cAction,cIDField,,,"POS")} 
+Local bLinPosDUP := {|oModel,nLine,cAction,cIDField| TMSAF63(oModel,nLine,cAction,cIDField,,,"POS")}
+Local bLinPosDVW := {|oModel,nLine,cAction,cIDField| TMSAF63(oModel,nLine,cAction,cIDField,,,"POS")}
+Local bLinPosDUQ := {|oModel,nLine,cAction,cIDField| TMSAF63(oModel,nLine,cAction,cIDField,,,"POS")}
+Local bLinPosDLD := {|oModel,nLine,cAction,cIDField| TMSAF63(oModel,nLine,cAction,cIDField,,,"POS")}
+Local bLinPosGFE := {|oModel,nLine,cAction,cIDField| TMSAF63G(oModel,nLine,cAction,cIDField,,,"POS")}
+Local bPosVldDTQ := {|oModel| TMSAF64(oModel,"POS")}
+Local bCommitDTQ := {|oModel| TMSAF67(oModel,.T.)}
+Local bCancel    := {|oModel| TMSAF67(oModel,.F.)}
+Local cDesTpT    := ""
+Local bPosVldSDG := {|oModel,nLine,cAction,cIDField| TMSAF63(oModel,nLine,cAction,cIDField,,,"POS")}
+Local cNoFldSDG	 := NoFieldsSDG(1)
+Local cPerg      := "TMSAF60"
+
+Private M->DTQ_TIPTRA := "1"
+
+cDesTpT := TMSValField("DTQ_TIPTRA",.F.)
+
+Pergunte(cPerg,.F.)
+
+//-- Estrutura SDG 
+oStruSDG	:= FWFormStruct(1,"SDG",{|cCampo| !(AllTrim(cCampo) + "|" $ cNoFldSDG ) } )
+//-- Remove campos das Model
+RemoveFld(oStruDTQ,{"DTQ_DATFEC","DTQ_HORFEC","DTQ_DATENC","DTQ_HORENC","DTQ_CODCAN","DTQ_OBSCAN","DTQ_CUSTO1",;
+					 "DTQ_CUSTO2","DTQ_CUSTO3","DTQ_CUSTO4","DTQ_CUSTO5","DTQ_QTDPER","DTQ_OK",;
+					 "DTQ_IDENT" ,"DTQ_IDOPE" ,"DTQ_IDCLI" ,"DTQ_RTAORI","DTQ_RTOORI","DTQ_IDPG","DTQ_IDPDG",;
+					 "DTQ_TIPMON","DTQ_STROTE"})
+
+If !lTMS3GFE
+	RemoveFld(oStruDTQ,{"DTQ_PAGGFE","DTQ_TIPVEI","DTQ_DESTIP","DTQ_CDTPOP","DTQ_DSTPOP","DTQ_CDCLFR","DTQ_DSCLFR",;
+						"DTQ_UFORI" ,"DTQ_CDMUNO","DTQ_MUNORI","DTQ_CEPORI","DTQ_UFDES" ,"DTQ_CDMUND","DTQ_MUNDES",;
+						"DTQ_CEPDES","DTQ_CHVEXT"})
+Else
+	RemoveFld(oStruDM8,{"DM8_FILORI","DM8_VIAGEM","DM8_FILDOC","DM8_DOC","DM8_SERIE"})
+	RemoveFld(oStruDJN,{"DJN_FILORI","DJN_VIAGEM","DJN_FILDOC","DJN_DOC","DJN_SERIE"})
+EndIf
+
+If MV_PAR01 == 1	//-- Carregamento manual
+	RemoveFld(oStruDM3,{"DM3_ORIGEM"})
+EndIf
+
+RemoveFld(oStruDTR,{"DTR_FILVGE","DTR_NUMVGE","DTR_DATINI","DTR_HORINI","DTR_DATFIM","DTR_HORFIM","DTR_PRCTRA",;
+                     "DTR_CODCPO","DTR_CODOPE","DTR_DESCPO","DTR_NOMOPE","DTR_OBS","DTR_OPERPC","DTR_QTDSAQ","DTR_QTDTRA",;
+                     "DTR_TPSPDG" })
+
+RemoveFld(oStruDUP,{"DUP_FILORI","DUP_VIAGEM","DUP_ITEDTR","DUP_CODVEI","DUP_CODOPE","DUP_NOMOPE","DUP_EMVIAG","DUP_PAGDIA",;
+                    "DUP_TPSPDG","DUP_QTDSAQ","DUP_QTDTRA"})
+
+RemoveFld(oStruDVB,{"DVB_FILORI","DVB_VIAGEM","DVB_CODVEI"})
+
+RemoveFld(oStruDVW,{"DVW_FILORI","DVW_VIAGEM"})
+
+RemoveFld(oStruDLD,{"DLD_FILORI","DLD_VIAGEM","DLD_ITEDTR","DLD_CODVEI"})
+
+//-- Fixa os Whens dos campos
+FixWhen(oStruDVW,"TMSAF61('DVW')","DVW")
+FixWhen(oStruDUP,"TMSAF61('DUP')","DUP")
+FixWhen(oStruDTR,"TMSAF61('DTR')","DTR")
+FixWhen(oStruDTQ,"TMSAF61('DTQ')","DTQ")
+
+//-- Fixa os Valids dos campos
+FixValid(oStruDVW,"TMSAF62('DVW')","DVW")
+FixValid(oStruDUP,"TMSAF62('DUP')","DUP")
+FixValid(oStruDTR,"TMSAF62('DTR')","DTR")
+FixValid(oStruDTQ,"TMSAF62('DTQ')","DTQ")
+FixValid(oStruDLD,"TMSAF62('DLD')","DLD")
+FixValid(oStruSDG,"TMSAF62('SDG')","SDG")
+FixValid(oStruDJN,"TMSAF62G('DJN')","DJN") 
+
+//-- Altera estrutura dos campos
+AltStruc(oStruDTQ,{{"DTQ_TIPTRA",{{2,".F."},{3,M->DTQ_TIPTRA}}},;
+					{"DTQ_DESTPT",{{3,"'" + cDesTpT + "'"}}},;
+					{"DTQ_SERADI",{{3,"1"}}},;
+					{"DTQ_HORGER",{{3,TMSAF66("DTQ_HORGER")}}}})
+
+AltStruc(oStruDVW,{{"DVW_VALOR" ,{{5,.T.}}},;
+  					{"DVW_ORIGEM",{{3,"'TMSA240'"}}}})
+
+AltStruc(oStruSDG,{{"DG_DOC"		,{{5,.F.}}},;
+					{"DG_BANCO"		,{{2,".T."}}},;
+					{"DG_AGENCIA"	,{{2,".T."}}},;
+					{"DG_NUMCON"	,{{2,".T."}}},;
+					{"DG_NUMCHEQ"	,{{2,".T."}}},;
+					{"DG_ORIGEM"	,{{3,"'DTR'"}}},;
+					{"DG_CLVL"		,{{2,".F."}}},;
+					{"DG_ITEMCTA"	,{{2,".F."}}},;
+					{"DG_CONTA"		,{{2,".F."}}},;
+					{"DG_CC"		,{{2,".F."}}},;
+					{"DG_CLVL"		,{{2,".F."}}}})
+
+//-- Monta gatilhos
+MntTrigger(oStruDTQ,{{{"DTQ_TIPVIA"},{"DTQ_TIPVIA"}}})
+MntTrigger(oStruDTQ,{{{"DTQ_SERTMS"},{"DTQ_DESSVT"}}})
+MntTrigger(oStruDTQ,{{{"DTQ_ROTA"},{"DTQ_ROTA"}}})
+MntTrigger(oStruDTQ,{{{"DTQ_TPOPVG"},{"DTQ_TPOPVG"}}})
+MntTrigger(oStruDTQ,{{{"DTQ_PAGGFE"},{"DTQ_PAGGFE"}}})
+
+MntTrigger(oStruDM3,{{{"DM3_SEQUEN"},{"DM3_SEQUEN"}}})
+MntTrigger(oStruDTR,{{{"DTR_CODVEI"},{"DTR_CODVEI","DTR_QTDEIX","DTR_QTEIXV","DTR_VALFRE"}}})  
+MntTrigger(oStruDTR,{{{"DTR_CODRB1"},{"DTR_QTDEIX","DTR_QTEIXV","DTR_VALFRE" }}})
+MntTrigger(oStruDTR,{{{"DTR_CODRB2"},{"DTR_QTDEIX","DTR_QTEIXV","DTR_VALFRE" }}})
+MntTrigger(oStruDTR,{{{"DTR_CODRB3"},{"DTR_QTDEIX","DTR_QTEIXV","DTR_VALFRE" }}})
+MntTrigger(oStruDTR,{{{"DTR_QTDEIX"},{"DTR_VALFRE" }}})
+MntTrigger(oStruDTR,{{{"DTR_QTEIXV"},{"DTR_VALFRE" }}})
+MntTrigger(oStruDUP,{{{"DUP_CODMOT"},{"DUP_CODMOT","DUP_IDOPE" }}})
+
+MntTrigger(oStruDM4,{{{"DM4_NUMVGE"},{"DM4_NUMVGE"}}})
+MntTrigger(oStruSDG,{{{"DG_TOTAL"},{"DG_VALCOB","DG_CUSTO1","DG_CUSTO2","DG_CUSTO3","DG_CUSTO4","DG_CUSTO5"}}})
+MntTrigger(oStruSDG,{{{"DG_CODDES"},{"DG_CLVL","DG_ITEMCTA","DG_CONTA","DG_CC"}}})
+
+oModel := MpFormModel():New("TMSAF60", /*bPreValidacao*/, bPosVldDTQ , bCommitDTQ , bCancel )
+
+oModel:SetDescription(STR0002)	//-- Viagem
+
+//-- Cabeçalho da Viagem
+oModel:AddFields("MdFieldDTQ",,oStruDTQ,,,)
+oModel:SetPrimaryKey({"DTQ_FILORI","DTQ_VIAGEM"})
+oModel:GetModel("MdFieldDTQ"):SetDescription(STR0002)	//-- Viagem
+oStruDTQ:SetProperty("DTQ_ROTA",MODEL_FIELD_OBRIGAT,.T.)
+oStruDTQ:SetProperty("DTQ_DATGER",MODEL_FIELD_INIT,{||dDataBase})
+If lIncMot	//-- Inclusão de condutor
+	oModel:GetModel("MdFieldDTQ"):SetOnlyView(.T.)
+EndIf
+
+//-- Grid dos Documentos
+oModel:AddGrid("MdGridDM3","MdFieldDTQ",oStruDM3, bLinPreDM3 , bLinPosDM3 , /*bPre*/ ,  /*bPost*/, /*bLoad*/)
+oModel:SetRelation("MdGridDM3",{{"DM3_FILIAL","xFilial('DM3')"},;
+								 {"DM3_FILORI","DTQ_FILORI"},;
+								 {"DM3_VIAGEM","DTQ_VIAGEM"}},;
+								 DM3->(IndexKey(2)))
+oModel:GetModel("MdGridDM3"):SetOptional(.T.)
+oModel:GetModel("MdGridDM3"):SetDescription(STR0003)	//-- Documentos
+oModel:GetModel("MdGridDM3"):SetUniqueLine( { "DM3_FILDOC", "DM3_DOC",  "DM3_SERIE"} )
+If lIncMot	//-- Inclusão de condutor
+	oModel:GetModel("MdGridDM3"):SetOnlyView(.T.)
+EndIf
+
+//-- Cabeçalho dos Veículos
+oModel:AddFields("MdFieldDM4","MdFieldDTQ",oStruDM4,,,)
+oModel:SetRelation("MdFieldDM4",{{"DM4_FILIAL","xFilial('DM4')"},;
+								  {"DM4_FILORI","DTQ_FILORI"},;
+								  {"DM4_VIAGEM","DTQ_VIAGEM"}},;
+								  DM4->(IndexKey(1)))
+oModel:GetModel("MdFieldDM4"):SetDescription(STR0018)	//-- Veículos
+If lIncMot	//-- Inclusão de condutor
+	oModel:GetModel("MdFieldDM4"):SetOnlyView(.T.)
+EndIf
+
+//-- Cabeçalho das Operadoras de Frota
+oModel:AddFields("MdFieldDM5","MdFieldDTQ",oStruDM5,,,)
+oModel:SetRelation("MdFieldDM5",{{"DM5_FILIAL","xFilial('DM5')"},;
+								  {"DM5_FILORI","DTQ_FILORI"},;
+								  {"DM5_VIAGEM","DTQ_VIAGEM"}},;
+								  DM5->(IndexKey(1)))
+oModel:GetModel("MdFieldDM5"):SetOptional(.T.)
+oModel:GetModel("MdFieldDM5"):SetDescription(STR0019)	//-- Operadoras de Frota
+If lIncMot	//-- Inclusão de condutor
+	oModel:GetModel("MdFieldDM5"):SetOnlyView(.T.)
+EndIf
+
+//-- Grid dos Veículos
+oModel:AddGrid("MdGridDTR","MdFieldDM4",oStruDTR, bLinPreDTR /*bLinePre*/, bLinPosDTR , /*bPre*/ , /*bPost*/, /*bLoad*/)
+
+oModel:SetRelation("MdGridDTR",{{"DTR_FILIAL","xFilial('DTR')"},;
+								 {"DTR_FILORI","DTQ_FILORI"},;
+								 {"DTR_VIAGEM","DTQ_VIAGEM"}},;
+								 DTR->(IndexKey(1)))
+
+oStruDTR:SetProperty('*', MODEL_FIELD_OBRIGAT,.F.)
+oModel:GetModel( 'MdGridDTR' ):SetOptional( .T. )
+oModel:GetModel( 'MdGridDTR' ):SetUniqueLine( { "DTR_CODVEI" } )
+If lIncMot	//-- Inclusão de condutor
+	oModel:GetModel("MdGridDTR"):SetOnlyView(.T.)
+EndIf
+
+//-- Grid dos Motoristas
+oModel:AddGrid("MdGridDUP","MdGridDTR",oStruDUP,bLinPreDUP,bLinPosDUP,,,)
+oModel:SetRelation("MdGridDUP",{{"DUP_FILIAL","xFilial('DUP')"},;
+  								 {"DUP_FILORI","DTQ_FILORI"},;
+								 {"DUP_VIAGEM","DTQ_VIAGEM"},;
+	  							 {"DUP_ITEDTR","DTR_ITEM"},;
+	  							 {"DUP_CODVEI","DTR_CODVEI"}},;
+								 DUP->(IndexKey(1)))
+
+oModel:GetModel( 'MdGridDUP' ):SetOptional( .T. )
+oModel:GetModel( "MdGridDUP" ):SetUniqueLine({"DUP_CODMOT"})
+
+//-- Grid dos Ajudantes
+oModel:AddGrid("MdGridDUQ","MdGridDTR",oStruDUQ,,bLinPosDUQ,,,)
+oModel:SetRelation("MdGridDUQ",{{"DUQ_FILIAL","xFilial('DUQ')"},;
+  								 {"DUQ_FILORI","DTQ_FILORI"},;
+								 {"DUQ_VIAGEM","DTQ_VIAGEM"},;
+	  							 {"DUQ_CODVEI","DTR_CODVEI"},;
+	  							 {"DUQ_ITEDTR","DTR_ITEM"}},;
+								 DUQ->(IndexKey(1)))
+oModel:GetModel("MdGridDUQ"):SetUniqueLine( { "DUQ_CODAJU" } )
+oModel:GetModel("MdGridDUQ"):SetOptional( .T. )
+If lIncMot	//-- Inclusão de condutor
+	oModel:GetModel("MdGridDUQ"):SetOnlyView(.T.)
+EndIf
+
+//-- Grid dos Lacres
+oModel:AddGrid("MdGridDVB","MdGridDTR",oStruDVB,,,,,)
+oModel:SetRelation("MdGridDVB",{{"DVB_FILIAL","xFilial('DVB')"},;
+  								 {"DVB_FILORI","DTQ_FILORI"},;
+								 {"DVB_VIAGEM","DTQ_VIAGEM"},;
+	  							 {"DVB_CODVEI","DTR_CODVEI"}},;
+								 DVB->(IndexKey(1)))
+
+oModel:GetModel( 'MdGridDVB' ):SetOptional( .T. )					
+oModel:GetModel( "MdGridDVB" ):SetUniqueLine({"DVB_LACRE"})
+If lIncMot	//-- Inclusão de condutor
+	oModel:GetModel("MdGridDVB"):SetOnlyView(.T.)
+EndIf
+
+//-- Grid das Despesas da Viagem
+oModel:AddGrid("MdGridSDG","MdGridDTR",oStruSDG,,bPosVldSDG,,,)
+oModel:SetRelation("MdGridSDG",{{"DG_FILIAL","xFilial('SDG')"},;
+  								 {"DG_FILORI","DTQ_FILORI"},;
+								 {"DG_VIAGEM","DTQ_VIAGEM"},;
+								 {"DG_CODVEI","DTR_CODVEI"}},;
+								 SDG->(IndexKey(5)))
+
+oModel:GetModel( 'MdGridSDG' ):SetOptional( .T. )
+oModel:GetModel( "MdGridSDG" ):SetUniqueLine({"DG_CODDES"})
+If lIncMot	//-- Inclusão de condutor
+	oModel:GetModel("MdGridSDG"):SetOnlyView(.T.)
+EndIf
+
+//-- Grid do Valor Informado
+oModel:AddGrid("MdGridDVW","MdFieldDTQ",oStruDVW,bLinPreDVW,bLinPosDVW,,,)
+oModel:SetRelation("MdGridDVW",{{"DVW_FILIAL","xFilial('DVW')"},;
+  								 {"DVW_FILORI","DTQ_FILORI"},;
+								 {"DVW_VIAGEM","DTQ_VIAGEM"}},;
+								 DVW->(IndexKey(1)))
+
+oModel:GetModel( 'MdGridDVW' ):SetOptional( .T. )
+oModel:GetModel( "MdGridDVW" ):SetUniqueLine({"DVW_CODPAS"})
+If lIncMot	//-- Inclusão de condutor
+	oModel:GetModel("MdGridDVW"):SetOnlyView(.T.)
+EndIf
+
+//-- Grid das Formas de Pagamento
+If cTMSOPdg <> "0"
+	oModel:AddGrid("MdGridDLD","MdGridDTR",oStruDLD,bLinPreDLD,bLinPosDLD,,,)
+	oModel:SetRelation("MdGridDLD",{{"DLD_FILIAL","xFilial('DLD')"},;
+									{"DLD_FILORI","DTQ_FILORI"},;
+									{"DLD_VIAGEM","DTQ_VIAGEM"},;
+									{"DLD_ITEDTR","DTR_ITEM"},;
+								    {"DLD_CODVEI","DTR_CODVEI"}},;
+									DLD->(IndexKey(1)))
+
+	oModel:GetModel( 'MdGridDLD' ):SetOptional( .T. )
+	oModel:GetModel( 'MdGridDLD' ):SetUniqueLine({"DLD_TIPPAR"} )
+	
+	If lIncMot	//-- Inclusão de condutor
+		oModel:GetModel("MdGridDLD"):SetOnlyView(.T.)
+	EndIf
+EndIf
+
+//Integração TMS x GFE
+If lTMS3GFE
+	//--- Continuação Documentos	
+	oModel:AddGrid("MdGridDM8","MdGridDM3",oStruDM8,bLinPreGFE,bLinPosGFE,,,)
+	oModel:SetRelation("MdGridDM8",{{"DM8_FILIAL","xFilial('DM8')"},;
+									{"DM8_FILDOC","DM3_FILDOC"},;
+									{"DM8_DOC","DM3_DOC"},;
+									{"DM8_SERIE","DM3_SERIE"},;
+									{"DM8_FILORI","DTQ_FILORI"},;
+									{"DM8_VIAGEM","DTQ_VIAGEM"}},;
+									DM8->(IndexKey(1)))
+
+	oModel:GetModel( 'MdGridDM8' ):SetOptional( .T. )
+	oModel:GetModel( 'MdGridDM8' ):SetNoInsertLine(.T.)
+
+	//--- Redespacho Adicional
+	oModel:AddGrid("MdGridDJN","MdGridDM3",oStruDJN,bLinPreGFE,bLinPosGFE,,,)
+	oModel:SetRelation("MdGridDJN",{{"DJN_FILIAL","xFilial('DJN')"},;
+									{"DJN_FILORI","DTQ_FILORI"},;
+									{"DJN_VIAGEM","DTQ_VIAGEM"},;
+									{"DJN_FILDOC","DM3_FILDOC"},;
+									{"DJN_DOC","DM3_DOC"},;
+									{"DJN_SERIE","DM3_SERIE"}},;
+									DJN->(IndexKey(1)))
+									
+
+	oModel:GetModel( 'MdGridDJN' ):SetOptional( .T. )
+	oModel:GetModel( 'MdGridDJN' ):SetUniqueLine( { "DJN_CODFOR", "DJN_LOJFOR" } )	
+EndIf
+
+oModel:AddCalc( "AF60CAL1", "MdFieldDTQ", "MdGridDM3", "DM3_QTDVOL"   , "DM3_QTDVOL"	, 'SUM',,, RetTitle("DM3_QTDVOL") )  // "Volume"
+oModel:AddCalc( "AF60CAL1", "MdFieldDTQ", "MdGridDM3", "DM3_VOLORI"   , "DM3_VOLORI"	, 'SUM',,, RetTitle("DM3_VOLORI")  )// "Volume"
+oModel:AddCalc( "AF60CAL1", "MdFieldDTQ", "MdGridDM3", "DM3_PESO"     , "DM3_PESO"	    , 'SUM',,, RetTitle("DM3_PESO")  ) // "Volume"
+oModel:AddCalc( "AF60CAL1", "MdFieldDTQ", "MdGridDM3", "DM3_PESOM3"   , "DM3_PESOM3"	, 'SUM',,, RetTitle("DM3_PESOM3")  ) // "Volume"
+oModel:AddCalc( "AF60CAL1", "MdFieldDTQ", "MdGridDM3", "DM3_VALMER"   , "DM3_VALMER"	, 'SUM',,, RetTitle("DM3_VALMER")  ) // "Volume"
+
+oModel:SetVldActivate({|oModel| TMSAF64(oModel,'VLD')})
+
+oModel:SetActivate()
+
+Return oModel
+
+/*{Protheus.doc} ViewDef
+    Definição da View
+    @type Static Function
+    @author Valdemar Roberto Mognon
+    @since 23/05/2020
+    @version P12 R12.1.29
+    @param param, param_type, param_descr
+    @return return, return_type, return_description
+    @example ViewDef()
+    (examples)
+    @see (links_or_references)
+*/
+Static Function ViewDef()
+Local oModel    := FwLoadModel("TMSAF60")
+Local oView
+Local oStruDTQ  := FwFormStruct(2,"DTQ")
+Local oStruDM3  := FwFormStruct(2,"DM3")
+Local oStruDM4  := FwFormStruct(2,"DM4")
+Local oStruDM5  := FwFormStruct(2,"DM5")
+Local oStruDTR  := FwFormStruct(2,"DTR")
+Local oStruDUP  := FwFormStruct(2,"DUP")
+Local oStruDUQ  := FwFormStruct(2,"DUQ")
+Local oStruDVB  := FwFormStruct(2,"DVB")
+Local oStruSDG := Nil 
+Local oStruDVW  := FwFormStruct(2,"DVW")
+Local oStruDLD  := FwFormStruct(2,"DLD")
+Local oStruDM8  := FwFormStruct(2,"DM8")
+Local oStruDJN  := FwFormStruct(2,"DJN")
+Local oCalc1	:= FWCalcStruct( oModel:GetModel( "AF60CAL1" ) )
+Local cNoFldSDG	:= ""
+
+//-- Remove campos das Views
+RemoveFld(oStruDTQ,{"DTQ_DATFEC","DTQ_HORFEC","DTQ_DATENC","DTQ_HORENC","DTQ_CODCAN","DTQ_OBSCAN","DTQ_FILATU","DTQ_FILDES","DTQ_CUSTO1",;
+					 "DTQ_CUSTO2","DTQ_CUSTO3","DTQ_CUSTO4","DTQ_CUSTO5","DTQ_QTDPER","DTQ_DATINI","DTQ_HORINI","DTQ_DATFIM","DTQ_HORFIM","DTQ_OK",;
+					 "DTQ_IDENT" ,"DTQ_IDOPE" ,"DTQ_IDCLI" ,"DTQ_STATUS","DTQ_RTAORI","DTQ_RTOORI","DTQ_IDPG","DTQ_IDPDG","DTQ_TIPMON","DTQ_STROTE",;
+					 "DTQ_CODOBS"})
+
+If !lTMS3GFE
+	RemoveFld(oStruDTQ,{"DTQ_PAGGFE","DTQ_TIPVEI","DTQ_DESTIP","DTQ_CDTPOP","DTQ_DSTPOP","DTQ_CDCLFR","DTQ_DSCLFR",;
+						"DTQ_UFORI" ,"DTQ_CDMUNO","DTQ_MUNORI","DTQ_CEPORI","DTQ_UFDES" ,"DTQ_CDMUND","DTQ_MUNDES",;
+						"DTQ_CEPDES","DTQ_CHVEXT"})
+Else
+	RemoveFld(oStruDM8,{"DM8_FILORI","DM8_VIAGEM","DM8_FILDOC","DM8_DOC","DM8_SERIE"})
+	RemoveFld(oStruDJN,{"DJN_FILORI","DJN_VIAGEM","DJN_FILDOC","DJN_DOC","DJN_SERIE"})
+EndIf
+
+If MV_PAR01 == 1	//-- Carregamento manual
+	RemoveFld(oStruDM3,{"DM3_ORIGEM"})
+EndIf
+
+RemoveFld(oStruDUP,{"DUP_FILORI","DUP_VIAGEM","DUP_ITEDTR","DUP_CODVEI","DUP_CODOPE","DUP_NOMOPE","DUP_EMVIAG","DUP_PAGDIA",;
+                    "DUP_TPSPDG","DUP_QTDSAQ","DUP_QTDTRA"})
+
+RemoveFld(oStruDUQ,{"DUQ_FILORI","DUQ_VIAGEM","DUQ_ITEDTR","DUQ_CODVEI"})
+
+RemoveFld(oStruDVB,{"DVB_FILORI","DVB_VIAGEM","DVB_CODVEI"})
+
+RemoveFld(oStruDVW,{"DVW_FILORI","DVW_VIAGEM","DVW_TIPUSO","DVW_IDENT","DVW_ORIGEM"})
+RemoveFld(oStruDLD,{"DLD_FILORI","DLD_VIAGEM","DLD_ITEDTR","DLD_CODVEI"})
+
+RemoveFld(oStruDM4,{"DM4_FILORI","DM4_VIAGEM" })
+
+RemoveFld(oStruDTR,{"DTR_FILORI","DTR_VIAGEM","DTR_FILVGE","DTR_NUMVGE","DTR_DATINI","DTR_HORINI","DTR_DATFIM","DTR_HORFIM","DTR_PRCTRA",;
+                     "DTR_CODCPO","DTR_CODOPE","DTR_DESCPO","DTR_NOMOPE","DTR_OBS","DTR_OPERPC","DTR_QTDSAQ","DTR_QTDTRA","DTR_REBTRF",;
+                     "DTR_TPSPDG","DTR_TMPVGE" })
+
+//---------------------------
+//-- Estrutura SDG 
+//----------------------------
+cNoFldSDG	:= NoFieldsSDG(2)
+oStruSDG	:= FWFormStruct(2,"SDG",{|cCampo| !(AllTrim(cCampo) + "|" $ cNoFldSDG ) } )
+oView := FwFormView():New()
+oView:SetModel(oModel)
+
+//-- Define a tela principal
+oView:CreateHorizontalBox("Tela",100)
+
+//-- Cria os Folders da tela principal
+oView:CreateFolder("Folder1","Tela")
+
+oView:AddSheet("Folder1","Sheet1_Folder1","Viagem")
+oView:AddSheet("Folder1","Sheet2_Folder1","Recursos")
+
+//-- Define os Boxes da tela principal
+If lTMS3GFE
+	oView:CreateHorizontalBox("BoxViagemSup",030,,,"Folder1","Sheet1_Folder1")
+	oView:CreateHorizontalBox("BoxViagemInf",037,,,"Folder1","Sheet1_Folder1")
+	oView:CreateHorizontalBox("BoxViagemGFE",025,,,"Folder1","Sheet1_Folder1")
+	oView:CreateHorizontalBox( "TOTAIS"	, 8 ,,,"Folder1","Sheet1_Folder1"  )
+Else
+	oView:CreateHorizontalBox("BoxViagemSup",040,,,"Folder1","Sheet1_Folder1")
+	oView:CreateHorizontalBox("BoxViagemInf",050,,,"Folder1","Sheet1_Folder1")
+	oView:CreateHorizontalBox( "TOTAIS"	, 10 ,,,"Folder1","Sheet1_Folder1"  )
+EndIf
+
+oView:CreateVerticalBox("VERTICAL1",3,"BoxViagemInf",.F.,"Folder1","Sheet1_Folder1")
+oView:CreateVerticalBox("VERTICAL2",97,"BoxViagemInf",.F.,"Folder1","Sheet1_Folder1")
+
+//-- Define os Boxes da tela de recursos
+oView:CreateHorizontalBox("BoxRecursosSup",035,,,"Folder1","Sheet2_Folder1")
+oView:CreateHorizontalBox("BoxRecursosMid",030,,,"Folder1","Sheet2_Folder1")
+oView:CreateHorizontalBox("BoxRecursosInf",035,,,"Folder1","Sheet2_Folder1")
+
+//-- Cria os Folders da tela superior dos recursos
+oView:CreateFolder("Folder3","BoxRecursosSup")
+
+oView:AddSheet("Folder3","Sheet1_Folder3","Planejamento")
+oView:AddSheet("Folder3","Sheet2_Folder3","Operadoras")
+
+//-- Define os Boxes da tela superior dos recursos
+oView:CreateHorizontalBox("BoxRecursosDM4",100,,,"Folder3","Sheet1_Folder3")
+oView:CreateHorizontalBox("BoxRecursosDM5",100,,,"Folder3","Sheet2_Folder3")
+
+//-- Cria os Folders da tela inferior dos recursos
+oView:CreateFolder("Folder2","BoxRecursosInf")
+
+oView:AddSheet("Folder2","Sheet1_Folder2","Motoristas")
+oView:AddSheet("Folder2","Sheet2_Folder2","Ajudantes")
+oView:AddSheet("Folder2","Sheet3_Folder2","Lacres")
+oView:AddSheet("Folder2","Sheet4_Folder2","Despesas")
+oView:AddSheet("Folder2","Sheet5_Folder2","Valor Inf.")
+If cTMSOPdg <> "0"
+	oView:AddSheet("Folder2","Sheet6_Folder2","Formas Pagto.")
+EndIf
+
+//-- Define os Boxes da tela inferior dos recursos
+oView:CreateHorizontalBox("BoxRecursosDUP",100,,,"Folder2","Sheet1_Folder2")
+oView:CreateHorizontalBox("BoxRecursosDUQ",100,,,"Folder2","Sheet2_Folder2")
+oView:CreateHorizontalBox("BoxRecursosDVB",100,,,"Folder2","Sheet3_Folder2")
+oView:CreateHorizontalBox("BoxRecursosSDG",100,,,"Folder2","Sheet4_Folder2")
+oView:CreateHorizontalBox("BoxRecursosDVW",100,,,"Folder2","Sheet5_Folder2")
+If cTMSOPdg <> "0"
+	oView:CreateHorizontalBox("BoxRecursosDLD",100,,,"Folder2","Sheet6_Folder2")
+	oView:SetVldFolder({|cID,nOldSheet, nSelSheet| TF64Folder(cID,nOldSheet,nSelSheet)})
+EndIf
+
+oView:AddField("VwFieldCDTQ",oStruDTQ,"MdFieldDTQ")
+oView:SetOwnerView("VwFieldCDTQ","BoxViagemSup")
+
+oView:AddGrid("VwGridDM3",oStruDM3,"MdGridDM3")
+oView:SetOwnerView("VwGridDM3","VERTICAL2")
+oView:EnableTitleView("VwGridDM3",STR0004)	//-- Documentos Embarcados
+oView:AddIncrementField("VwGridDM3","DM3_SEQUEN")
+
+If lTMS3GFE
+	oView:CreateFolder("Folder4","BoxViagemGFE")
+	oView:AddSheet("Folder4","Sheet1_Folder4",STR0020)  //Trecho do Documento
+	oView:AddSheet("Folder4","Sheet2_Folder4",STR0021)  //Redespacho Adicional
+	oView:CreateHorizontalBox("BoxViagemDM8",100,,,"Folder4","Sheet1_Folder4")
+	oView:CreateHorizontalBox("BoxViagemDJN",100,,,"Folder4","Sheet2_Folder4")
+	
+	oView:AddGrid("VwGridDM8",oStruDM8,"MdGridDM8") //Trecho do Documento
+	oView:SetOwnerView("VwGridDM8","BoxViagemDM8")
+
+	oView:AddGrid("VwGridDJN",oStruDJN,"MdGridDJN")  //Redespacho Adicional
+	oView:SetOwnerView("VwGridDJN","BoxViagemDJN")
+	oView:AddIncrementField("VwGridDJN","DJN_SEQRDP")
+
+	oView:AddUserButton(STR0022,'', {|| TMSVDCGFE(FwFldGet('DM3_FILDOC'),FwFldGet('DM3_DOC'),FwFldGet('DM3_SERIE'))} ) //Docto de Carga
+	oView:AddUserButton(STR0021,'', {|oModel| TMF60RdVge(oModel)} ) //Redespacho Adicional
+EndIf
+
+oView:AddField("VwFieldDM4",oStruDM4,"MdFieldDM4")
+oView:SetOwnerView("VwFieldDM4","BoxRecursosDM4")
+oView:EnableTitleView("VwFieldDM4",STR0018)	//-- Planejamento da Viagem
+
+oView:AddField("VwFieldDM5",oStruDM5,"MdFieldDM5")
+oView:SetOwnerView("VwFieldDM5","BoxRecursosDM5")
+oView:EnableTitleView("VwFieldDM5",STR0019)	//-- Operadoras de Frota
+
+oView:AddGrid("VwGridDTR",oStruDTR,"MdGridDTR")
+oView:SetOwnerView("VwGridDTR","BoxRecursosMid")
+oView:EnableTitleView("VwGridDTR",STR0005)	//-- Veículos da Viagem
+oView:AddIncrementField("VwGridDTR","DTR_ITEM")
+
+oView:AddGrid("VwGridDUP",oStruDUP,"MdGridDUP")
+oView:SetOwnerView("VwGridDUP","BoxRecursosDUP")
+
+oView:AddGrid("VwGridDUQ",oStruDUQ,"MdGridDUQ")
+oView:SetOwnerView("VwGridDUQ","BoxRecursosDUQ")
+
+oView:AddGrid("VwGridDVB",oStruDVB,"MdGridDVB")
+oView:SetOwnerView("VwGridDVB","BoxRecursosDVB")
+oView:AddIncrementField("VwGridDVB","DVB_ITEM")
+
+oView:AddGrid("VwGridISDG",oStruSDG,"MdGridSDG")
+oView:SetOwnerView("VwGridISDG","BoxRecursosSDG")
+oView:AddIncrementField("VwGridISDG","DG_ITEM")
+
+oView:AddGrid("VwGridDVW",oStruDVW,"MdGridDVW")
+oView:SetOwnerView("VwGridDVW","BoxRecursosDVW")
+
+If cTMSOPdg <> "0"
+	oView:AddGrid("VwGridDLD",oStruDLD,"MdGridDLD")
+	oView:SetOwnerView("VwGridDLD","BoxRecursosDLD")
+EndIf
+
+oView:AddOtherObject( "VwButton", { |oPanel| TF60Button( oPanel ) } )
+oView:SetOwnerView( "VwButton" , "VERTICAL1"  )
+
+oView:AddField( 'VIEW_CALC1', oCalc1  , "AF60CAL1" )
+oView:SetOwnerView( "VIEW_CALC1" , "TOTAIS"  )
+
+Return oView
+
+/*{Protheus.doc} MenuDef
+    Definição do aRotina (Menu funcional)
+    @type Static Function
+    @author Valdemar Roberto Mognon
+    @since 23/05/2020
+    @version P12 R12.1.29
+    @param param, param_type, param_descr
+    @return return, return_type, return_description
+    @example MenuDef()
+    (examples)
+    @see (links_or_references)
+*/
+Static Function MenuDef()
+Local aRotina := {}
+
+ADD OPTION aRotina TITLE STR0006 ACTION "AxPesqui"        OPERATION 1 ACCESS 0
+ADD OPTION aRotina TITLE STR0007 ACTION "VIEWDEF.TMSAF60" OPERATION 2 ACCESS 0
+ADD OPTION aRotina TITLE STR0008 ACTION "VIEWDEF.TMSAF60" OPERATION 3 ACCESS 0
+ADD OPTION aRotina TITLE STR0009 ACTION "VIEWDEF.TMSAF60" OPERATION 4 ACCESS 0
+ADD OPTION aRotina TITLE STR0010 ACTION "VIEWDEF.TMSAF60" OPERATION 5 ACCESS 0
+
+//-- Adiciona rotinas do sub-menu de manutenção
+aRotina := TMSAF68(Aclone(aRotina))
+
+Return (aRotina)
+
+/*{Protheus.doc} MntTrigger
+    Monta a estrutura da Trigger
+    @type Static Function
+    @author Katia
+    @since 19/06/2020
+    @version P12 R12.1.29
+    @param param, param_type, param_descr
+    @return return, return_type, return_description
+    @example MntTrigger()
+    (examples)
+    @see (links_or_references)
+*/
+Static Function MntTrigger(oStruct,aTrigger)
+Local cDominio  := ""
+Local cContra   := ""
+Local nCntFor1  := 0
+Local nCntFor2  := 0
+Local nCntFor3  := 0
+Local aAux      := {}
+
+For nCntFor1 := 1 To Len(aTrigger)
+	For nCntFor2 := 1 To Len(aTrigger[nCntFor1,1])
+		cDominio := aTrigger[nCntFor1,1,nCntFor2]
+		For nCntFor3 := 1 To Len(aTrigger[nCntFor1,2])
+			cContra := aTrigger[nCntFor1,2,nCntFor3]
+
+			aAux :=(FwStruTrigger(cDominio	,; // Campo de Dominio
+								  cContra	,; // Campo de ContraDominio
+								  "TMSAF65GAT('" + cDominio + "', '" + cContra + "')"	,; // Regra de Preenchimento
+								  ,; // Se posicionara ou não antes da execução do gatilhos (Opcional)
+								  ,; // Alias da tabela a ser posicionada (Obrigatorio se lSeek = .T.)
+								  ,; // Ordem da tabela a ser posicionada (Obrigatorio se lSeek = .T.)
+								  ,; // Chave de busca da tabela a ser posicionada (Obrigatorio se lSeek = .T)
+								  )) // Condição para execução do gatilho (Opcional)
+
+			oStruct:AddTrigger(aAux[1],;	//-- [01] Id do campo de origem
+							   aAux[2],;	//-- [02] Id do campo de destino
+							   aAux[3],;	//-- [03] Bloco de codigo de validação da execução do gatilho
+							   aAux[4])		//-- [04] Bloco de codigo de execução do gatilho
+		Next nCntFor3
+	Next nCntFor2
+Next nCntFor1
+
+FwFreeArray(aAux)
+
+Return
+
+/*{Protheus.doc} RemoveFld
+    Remove fieldes de uma View
+    @type Static Function
+    @author Valdemar Roberto Mognon
+    @since 01/07/2020
+    @version P12 R12.1.29
+    @param param, param_type, param_descr
+    @return return, return_type, return_description
+    @example RemoveFld(oStruct,aFields)
+    (examples)
+    @see (links_or_references)
+*/
+Static Function RemoveFld(oStruct,aCampos)
+Local nCntFor1 := 0
+
+Default oStruct := Nil
+Default aCampos := {}
+
+For nCntFor1 := 1 To Len(aCampos)
+	&("oStruct:RemoveField('" + aCampos[nCntFor1] + "')")
+Next nCntFor1
+
+Return
+
+/*{Protheus.doc} AltStruc
+    Altera estrutura dos campos
+    @type Static Function
+    @author Valdemar Roberto Mognon
+    @since 01/07/2020
+    @version P12 R12.1.29
+    @param param, param_type, param_descr
+    @return return, return_type, return_description
+    @example AltStruc(oStruct,aCampos (cCampo,(1=Valid / 2=When / 3=IniPad / 4=PictVar / 5=Obrigat),cExpressao))
+    (examples)
+    @see (links_or_references)
+*/
+Static Function AltStruc(oStruct,aCampos)
+Local bCodigo  := Nil
+Local nCntFor1 := 0
+Local nCntFor2 := 0
+
+Default oStruc  := Nil
+Default aCampos := {}
+
+For nCntFor1 := 1 To Len(aCampos)
+	For nCntFor2 := 1 To Len(aCampos[nCntFor1,2])
+		If aCampos[nCntFor1,2,nCntFor2,1] == 5
+			bCodigo := aCampos[nCntFor1,2,nCntFor2,2]
+		Else
+			bCodigo := FWBuildFeature(Iif(aCampos[nCntFor1,2,nCntFor2,1] == 1,STRUCT_FEATURE_VALID,;
+									  Iif(aCampos[nCntFor1,2,nCntFor2,1] == 2,STRUCT_FEATURE_WHEN,;
+									  Iif(aCampos[nCntFor1,2,nCntFor2,1] == 3,STRUCT_FEATURE_INIPAD,;
+									  Iif(aCampos[nCntFor1,2,nCntFor2,1] == 4,STRUCT_FEATURE_PICTVAR,Nil)))),aCampos[nCntFor1,2,nCntFor2,2])
+		EndIf
+				
+		oStruct:SetProperty(aCampos[nCntFor1,1],Iif(aCampos[nCntFor1,2,nCntFor2,1] == 1,MODEL_FIELD_VALID,;
+												Iif(aCampos[nCntFor1,2,nCntFor2,1] == 2,MODEL_FIELD_WHEN,;
+												Iif(aCampos[nCntFor1,2,nCntFor2,1] == 3,MODEL_FIELD_INIT,;
+												Iif(aCampos[nCntFor1,2,nCntFor2,1] == 4,MODEL_FIELD_PICTVAR,;
+												Iif(aCampos[nCntFor1,2,nCntFor2,1] == 5,MODEL_FIELD_OBRIGAT,Nil))))),bCodigo)
+	Next nCntFor2
+Next nCntFor1
+
+Return
+
+/*{Protheus.doc} FixWhen
+    Altera estrutura dos campos
+    @type Static Function
+    @author Valdemar Roberto Mognon
+    @since 07/07/2020
+    @version P12 R12.1.29
+    @param param, param_type, param_descr
+    @return return, return_type, return_description
+    @example FixWhen(oStruct,cFuncao)
+    (examples)
+    @see (links_or_references)
+*/
+Static Function FixWhen(oStruct,cFuncao,cTabela)
+Local nCntFor1 := 0
+Local aCampos  := {}
+Local bCodigo
+Local lFixWhen := .T.
+
+Default oStruct := Nil
+Default cFuncao := ""
+Default cTabela := ""
+
+aCampos := oStruct:GetFields()
+bCodigo := FWBuildFeature(STRUCT_FEATURE_WHEN,cFuncao)
+
+For nCntFor1 := 1 To Len(aCampos)
+	If cTabela == "DTR"
+		lFixWhen:= !Empty(GetSX3Cache(aCampos[nCntFor1,MODEL_FIELD_IDFIELD],"X3_WHEN"))		
+	EndIf
+	If lFixWhen
+		oStruct:SetProperty(aCampos[nCntFor1,MODEL_FIELD_IDFIELD],MODEL_FIELD_WHEN,bCodigo)
+	EndIf
+Next nCntFor1
+
+Return
+
+/*{Protheus.doc} FixValid
+    Altera estrutura dos campos
+    @type Static Function
+    @author Valdemar Roberto Mognon
+    @since 07/07/2020
+    @version P12 R12.1.29
+    @param param, param_type, param_descr
+    @return return, return_type, return_description
+    @example FixValid(oStruct,cFuncao)
+    (examples)
+    @see (links_or_references)
+*/
+Static Function FixValid(oStruct,cFuncao,cTabela)
+Local nCntFor1 := 0
+Local aCampos  := {}
+Local bCodigo
+Local lFixValid := .T.
+
+Default oStruct := Nil
+Default cFuncao := ""
+Default cTabela := ""
+
+aCampos := oStruct:GetFields()
+bCodigo := FWBuildFeature(STRUCT_FEATURE_VALID,cFuncao)
+
+For nCntFor1 := 1 To Len(aCampos)
+	If cTabela $ "DTR"
+		lFixValid := "TMSA240VLD()" $ UPPER(AllTrim(GetSX3Cache(aCampos[nCntFor1,MODEL_FIELD_IDFIELD],"X3_VALID")))
+	ELseIf cTabela $ "DUP"
+		lFixValid := "TA240VLMOT()" $ UPPER(AllTrim(GetSX3Cache(aCampos[nCntFor1,MODEL_FIELD_IDFIELD],"X3_VALID")))
+	ELseIf cTabela $ "DTQ"
+		lFixValid := "TMSA144VAL()" $ UPPER(AllTrim(GetSX3Cache(aCampos[nCntFor1,MODEL_FIELD_IDFIELD],"X3_VALID")))
+		If !lFixValid
+			lFixValid := Iif(!lFixValid,aCampos[nCntFor1,MODEL_FIELD_IDFIELD] == "DTQ_SERTMS",.F.)
+			lFixValid := Iif(!lFixValid,aCampos[nCntFor1,MODEL_FIELD_IDFIELD] == "DTQ_TIPVIA",.F.)
+		EndIf
+	ELseIf cTabela $ "DVW|DLD"
+		lFixValid := "TMSA240VLD()" $ UPPER(AllTrim(GetSX3Cache(aCampos[nCntFor1,MODEL_FIELD_IDFIELD],"X3_VALID")))
+	ELseIf cTabela $ "DJN"
+		lFixValid := "TMSA144VAL()" $ UPPER(AllTrim(GetSX3Cache(aCampos[nCntFor1,MODEL_FIELD_IDFIELD],"X3_VALID")))
+	EndIf
+
+	If lFixValid
+		oStruct:SetProperty(aCampos[nCntFor1,MODEL_FIELD_IDFIELD],MODEL_FIELD_VALID,bCodigo)
+	EndIf
+
+Next nCntFor1
+
+Return
+//-----------------------------------------------
+/* {Protheus.doc} TmsVgeMod3
+Indica se é viagem modelo 3 
+@author Caio Murakami
+@since 13/07/2020
+@version P12 R12.1.29
+@return Nil
+*///--------------------------------------------- 
+Function TmsVgeMod3()
+Local lRet		:= .F. 
+Local oModel	:= Nil
+
+If Left(FunName(),7) == 'TMSAF60' .Or. IsInCallStack("TMSAF60") .Or. IsInCallStack("A67BlqViag")
+	lRet	:= .T. 
+Else
+	oModel	:= FwModelActive()
+	If oModel <> Nil .And. AllTrim(Upper(oModel:cID)) == 'TMSAF60'  //--- Viagem Modelo 3
+		lRet	:= .T. 
+	EndIf
+EndIf
+
+Return lRet 
+/*/{Protheus.doc} TF60F3Doc
+	Realiza chamada do filtro de documentos TMSC080
+	@type  Function
+	@author Caio Murakami
+	@since 23/07/2020
+	@version version
+	@param param, param_type, param_descr
+	@return return, return_type, return_description
+	@example
+	(examples)
+	@see (links_or_references)
+	/*/
+Function TF60F3Doc( lSelDoc )
+Local cFiltraDUD	:= ""
+Local lTMSDCol 		:= SuperGetMv("MV_TMSDCOL",,.F.)	//-- Desconsidera filial de origem da solicitação de coleta.
+Local nOpcSel		:= 0 
+Local lVgeMod3      := TmsVgeMod3()	//-- Viagem Modelo 3
+Local lCarMod3      := TmsCarMod3()	//-- Carregamento Modelo 3
+Local cFilOri       := Iif(lVgeMod3 .And. !lCarMod3 .And. !IsInCallStack("TMSA360MNT"),FWFldGet("DTQ_FILORI"),DTQ->DTQ_FILORI)
+Local cViagem       := Iif(lVgeMod3 .And. !lCarMod3 .And. !IsInCallStack("TMSA360MNT"),FWFldGet("DTQ_VIAGEM"),DTQ->DTQ_VIAGEM)
+Local cSerAdi       := Iif(lVgeMod3 .And. !lCarMod3 .And. !IsInCallStack("TMSA360MNT"),FWFldGet("DTQ_SERADI"),DTQ->DTQ_SERADI)
+Local cSerTMS       := Iif(lVgeMod3 .And. !lCarMod3 .And. !IsInCallStack("TMSA360MNT"),FwFldGet("DTQ_SERTMS"),DTQ->DTQ_SERTMS)
+Local cTipTra       := Iif(lVgeMod3 .And. !lCarMod3 .And. !IsInCallStack("TMSA360MNT"),FwFldGet("DTQ_TIPTRA"),DTQ->DTQ_TIPTRA)
+Local cRota         := Iif(lVgeMod3 .And. !lCarMod3 .And. !IsInCallStack("TMSA360MNT"),FwFldGet("DTQ_ROTA")  ,DTQ->DTQ_ROTA)
+
+Default lSelDoc		:= .F. 
+
+cFiltraDUD := "DUD_FILIAL = '" + xFilial("DUD") + "'" + Iif(lTMSDCol,""," AND DUD_FILORI = '" + cFilAnt + "'") + " AND DUD_TIPTRA = '" + cTipTra + "'"
+
+If cSerAdi == "1"
+	cFiltraDUD += " AND (DUD_SERTMS = '" + cSerTms + "' OR DUD_SERTMS = '" + cSerAdi + "')"
+Else
+	cFiltraDUD += " AND DUD_SERTMS = '" + cSerTms + "'"			
+EndIf
+
+cFiltraDUD += " AND DUD_NUMRED = ' ' "
+
+If !lCarMod3
+	cFiltraDUD += " AND DUD_STATUS IN ('1') "
+Else
+	cFiltraDUD += " AND DUD_STATUS IN ('1','3') "
+EndIf
+
+If lCarMod3 .Or. IsInCallStack("TMSA360MNT")
+	cFiltraDUD += " AND DUD_FILORI = '" + cFilOri + "' AND DUD_VIAGEM = '" + cViagem + "' "
+EndIf
+
+nOpcSel   := TMSC080(cFiltraDUD,lSelDoc,,cRota , , cSerTms , cTipTra , cSerAdi )
+
+Return nOpcSel
+
+/*/{Protheus.doc} TMSF60Qry
+	(long_description)
+	@type  Function
+	@author user
+	@since date
+	@version version
+	@param param, param_type, param_descr
+	@return return, return_type, return_description
+	@example
+	(examples)
+	@see (links_or_references)
+	/*/
+Function TMSF60Qry( nOpcx, cRota, lOrderBy, cFiltroDUD , cSerTms , cTipTra , cSerAdi , lVgeMod2 , lVgeExpr, lCdrOri, nTipVia , lColeta, cGrpProd, nCarreg , cRotGen, nRotGen , lTmsCFec , lVgeColet , cZona, cSetor )
+
+Local cStatus   := StrZero(1,Len(DUD->DUD_STATUS))
+Local cVgeAux   := Space(Len(DUD->DUD_VIAGEM))
+Local cQuery    := ""
+Local cFilDT5   := xFilial("DT5")
+Local lAlianca  := TmsAlianca() //-- Verifica se utiliza Alianca
+Local lPesqCCli := SuperGetMv("MV_TMSPCLI",,.F.)	//-- Atraves deste parametro é possivel fazer com que o
+													//-- Pontos por setor sejam pesquisados por codigo de Cliente.
+
+Local cQueryTp  := If("POSTGRES"$TCGetDb(),"Char(1)","") //-- Usado em query BD POSTGRES
+Local lDTP 	  	:= .F.
+
+Local lTMSDCol 	:= SuperGetMv("MV_TMSDCOL",,.F.)	//-- Desconsidera filial de origem da solicitação de coleta.
+Local cQryDTP	:= ""
+Local cAliasDTP	:= ""
+Local cCdrOri	:= PadR(GetMv('MV_CDRORI'),Len(DA8->DA8_CDRORI))
+Local lVgeMod3	:= TmsVgeMod3()
+
+Default nOpcX		:= 3 
+Default cRota       := ""
+Default lOrderBy    := .T.
+Default cFiltroDUD  := ""
+Default cSerTms		:= ""
+Default cTipTra		:= ""
+Default cSerAdi		:= ""
+Default lVgeMod2	:= ("TMSA144" $ AllTrim(FunName())) 
+Default lVgeExpr	:= Iif( !lVgeMod2 .Or. lVgeMod3, .F. , .T. ) 
+Default lCdrOri		:= .F. 
+Default cSerAdi		:= ""
+Default nTipVia		:=  Iif( !Empty(M->DTQ_TIPVIA),Val( M->DTQ_TIPVIA ), 1 )
+Default lColeta 	:= ( cSerTms == StrZero( 1, Len( DC5->DC5_SERTMS ) ) )
+Default cGrpProd	:= ""
+Default nCarreg		:= 0 
+Default cRotGen 	:= Iif(lColeta,GetMv('MV_ROTGCOL',,''),GetMv('MV_ROTGENT',,''))
+Default nRotGen		:= 0 
+Default lTmsCFec	:= TmsCFec()
+Default lVgeColet	:= .F. 
+Default cZona		:= ""
+Default cSetor		:= ""
+
+If cSerTms == '2'
+	If !lVgeExpr
+		cQuery := " SELECT DUD.DUD_FILDOC, DUD.DUD_DOC, DUD.DUD_SERIE, DUD.R_E_C_N_O_ DUDRECNO "
+		cQuery += "   FROM " + RetSQLTab("DUD")
+		cQuery += "   WHERE DUD_FILIAL = '" + xFilial("DUD") + "' "
+		cQuery += "     AND DUD_SERTMS = '" + cSerTms + "' "
+		cQuery += "     AND DUD_TIPTRA = '" + cTipTra + "' "
+		cQuery += "     AND DUD_VIAGEM = ' ' "
+		cQuery += "     AND DUD_STATUS = '" + StrZero(1,Len(DUD->DUD_STATUS)) + "' "
+		If !lTMSDCol
+			cQuery += "     AND DUD_FILORI = '" + cFilAnt + "'"
+		EndIf
+		cQuery += "     AND D_E_L_E_T_ = ' ' "
+	Else
+		cQuery := " SELECT DUD.DUD_FILDOC, DUD.DUD_DOC, DUD.DUD_SERIE, DUD.R_E_C_N_O_ DUDRECNO "
+		cQuery += "   FROM " + RetSQLTab("DUD")
+		cQuery += "   WHERE DUD_FILIAL = '" + xFilial("DUD") + "' "
+		cQuery += "     AND DUD_SERTMS = '" + cSerTms + "' "
+		cQuery += "     AND DUD_TIPTRA = '" + cTipTra + "' "
+		If !lTMSDCol
+			cQuery += "     AND DUD_FILORI = '" + cFilAnt + "'"
+		EndIf
+		cQuery += "     AND DUD_VIAGEM = '" + M->DTQ_VIAGEM + "' "
+		cQuery += "     AND D_E_L_E_T_ = ' ' "
+	EndIf
+	If !Empty(cFiltroDUD)
+		cQuery += cFiltroDUD
+	EndIf
+ElseIf nTipVia == 2 //-- Viagem Vazia
+	cQuery := TM141QryVz(nOpcx,cRota)
+Else
+	If nOpcx <> 3
+		If lOrderBy
+			If Empty(cRota)
+				cQuery += " SELECT "
+				cQuery += " DA8_COD, MIN(DA8_DESC) DA8_DESC, MIN(TIPROT) TIPROT, "
+				cQuery += " DA5_COD, MIN(DA5_DESC) DA5_DESC, DA6_ROTA, MIN(DA6_REF) DA6_REF , "
+				cQuery += " MIN(DUD_STATUS) DUD_STATUS, SUM(DT6_QTDVOL) DT6_QTDVOL, SUM(DT6_PESO) DT6_PESO    , SUM(DT6_VOLORI) DT6_VOLORI, "
+				cQuery += " SUM(DT6_PESOM3) DT6_PESOM3, SUM(DT6_VALMER) DT6_VALMER, MIN(DUD_SERTMS) DUD_SERTMS," + cQueryTp + " 'X' CVISUAL "
+				cQuery += "  FROM ( "
+				cQuery += " SELECT "
+				cQuery += " DA8_COD, MIN(DA8_DESC) DA8_DESC, MIN(DA8_TIPROT) TIPROT, "
+				cQuery += " DA5_COD, MIN(DA5_DESC) DA5_DESC, DA6_ROTA, MIN(DA6_REF) DA6_REF , "
+				cQuery += " MIN(DUD_STATUS) DUD_STATUS, MIN(DT6_QTDVOL) DT6_QTDVOL, MIN(DT6_PESO)   DT6_PESO  , MIN(DT6_VOLORI) DT6_VOLORI, "
+				cQuery += " MIN(DT6_PESOM3) DT6_PESOM3, MIN(DT6_VALMER) DT6_VALMER, MIN(DUD_SERTMS) DUD_SERTMS, DUD_FILDOC, DUD_DOC, DUD_SERIE," + cQueryTp + " 'X' CVISUAL "
+			Else
+				If lColeta
+					cQuery += " SELECT "
+					cQuery += " DUD_FILDOC, DUD_DOC, DUD_SERIE, MIN(DUD_SERTMS) DUD_SERTMS, "
+					cQuery += " MIN(DUD_STATUS) DUD_STATUS, MIN(DUD_VIAGEM)  DUD_VIAGEM, MIN(DUD_SEQUEN) DUD_SEQUEN, "
+					cQuery += " MIN(DT6_BLQDOC) DT6_BLQDOC, MIN(DT6_DATEMI)  DT6_DATEMI, MIN(DT6_PRZENT) DT6_PRZENT, "
+					cQuery += " MIN(DT6_QTDVOL) DT6_QTDVOL, MIN(DT6_PESO)    DT6_PESO  , MIN(DT6_PESOM3) DT6_PESOM3, "
+					cQuery += " MIN(DT6_VALMER) DT6_VALMER, MIN(DT5_SEQEND)  DT5_SEQEND, MIN(DT5_DATSOL) DT5_DATSOL, "
+					cQuery += " MIN(DT5_HORSOL) DT5_HORSOL, MIN(DT5_DATPRV)  DT5_DATPRV, MIN(DT5_HORPRV) DT5_HORPRV, "
+					cQuery += " MIN(DT5_CODSOL) DT5_CODSOL, "
+					cQuery += " MIN(DT5_DDD)    DT5_DDD   , MIN(DT5_TEL)     DT5_TEL   , MIN(DT6_VOLORI) DT6_VOLORI, "
+					If nOpcx == 2
+						cQuery += " MIN(DUD_ZONA) DA7_PERCUR, "
+					Else
+						cQuery += " MIN(DA6_PERCUR) DA7_PERCUR, "
+					EndIf
+					cQuery += cQueryTp + " ' ' DA7_SEQUEN, MIN(DA6_ROTA)   DA7_ROTA "
+					If !lVgeMod2 .And. lTmsCFec
+						//-- Retorna os campos referente ao Agendamento.
+						cQuery += ", MIN(DF1_ITEAGE) DF1_ITEAGE "
+						cQuery += ", MIN(DF1_NUMAGE) DF1_NUMAGE "
+						cQuery += ", MIN(DT5_CLIDES) DT5_CLIDES "
+						cQuery += ", MIN(DT5_LOJDES) DT5_LOJDES "
+						cQuery += ", MIN(DT5_DATENT) DT5_DATENT "
+						cQuery += ", MIN(DT5_HORENT) DT5_HORENT "
+						cQuery += ", MIN(DUD_SEQENT) DUD_SEQENT "
+					EndIf
+				Else
+					cQuery += " SELECT "
+					cQuery += " DUD_FILDOC, DUD_DOC, DUD_SERIE, MIN(DUD_SERTMS) DUD_SERTMS, "
+					cQuery += " MIN(DUD_STATUS) DUD_STATUS, MIN(DUD_VIAGEM) DUD_VIAGEM, MIN(DUD_SEQUEN) DUD_SEQUEN, "
+					cQuery += " MIN(DT6_BLQDOC) DT6_BLQDOC, MIN(DT6_DATEMI) DT6_DATEMI, MIN(DT6_PRZENT) DT6_PRZENT, "
+					cQuery += " MIN(DT6_QTDVOL) DT6_QTDVOL, MIN(DT6_PESO)   DT6_PESO  , MIN(DT6_PESOM3) DT6_PESOM3, "
+					cQuery += " MIN(DT6_VALMER) DT6_VALMER, MIN(DT6_CLIREM) DT6_CLIREM, MIN(DT6_LOJREM) DT6_LOJREM, "
+					cQuery += " MIN(DT6_CLIDES) DT6_CLIDES, MIN(DT6_LOJDES) DT6_LOJDES, "
+					If nOpcx == 2
+						cQuery += " MIN(DUD_ZONA) DA7_PERCUR, "
+					Else
+						cQuery += " MIN(DA6_PERCUR) DA7_PERCUR, "
+					EndIf
+
+					cQuery += cQueryTp //-- Usado em query BD POSTGRES
+					cQuery += " ''              DA7_SEQUEN, MIN(DA6_ROTA)  DA7_ROTA   , MIN(DT6_VOLORI) DT6_VOLORI  "
+				EndIf
+			EndIf
+		Else
+			cQuery += " SELECT "
+			cQuery += " DUD_FILDOC, DUD_DOC, DUD_SERIE, DUD.R_E_C_N_O_ DUDRECNO "
+		EndIf
+		cQuery += " FROM "
+		If lColeta .And. !lVgeMod2 .And. lTmsCFec
+			//-- Verifica se existe Agendamento associado a Solicitacao de Coleta.
+			cQuery +=   RetSqlName('DUD') + " DUD "//Movimento de Viagem
+			cQuery += "LEFT JOIN " + RetSqlName('DF1') + " DF1 "
+			cQuery += "  ON DF1_FILIAL     = '" + xFilial("DF1") + "'"
+			cQuery += " AND DF1_FILDOC     = DUD_FILDOC"
+			cQuery += " AND DF1_DOC        = DUD_DOC"
+			cQuery += " AND DF1_SERIE      = DUD_SERIE"
+			cQuery += " AND DF1.D_E_L_E_T_ = ' ', "
+		Else
+			cQuery +=   RetSqlName('DUD') + " DUD, "//Movimento de Viagem
+		EndIf
+		cQuery +=  RetSqlName('DA6') + " DA6, " //Cadastro de setor x Zona
+		cQuery +=  RetSqlName('DA5') + " DA5, " //Cadastro de Zonas
+		cQuery +=  RetSqlName('DA8') + " DA8, "//Documentos de transporte
+		cQuery +=  RetSqlName('DA9') + " DA9, "// Zonas x Rotas
+		cQuery +=  RetSqlName('DT6') + " DT6 "//Documentos de transporte
+		If lColeta
+			cQuery +=   "," + RetSqlName('DT5') + " DT5 "//Solicitacao de coleta
+		EndIf
+		cQuery += " WHERE DUD_FILIAL     = '" + xFilial("DUD") + "' "
+		cQuery += "   AND DUD_FILORI     = '" + M->DTQ_FILORI  + "' "
+		cQuery += "   AND DUD_VIAGEM     = '" + M->DTQ_VIAGEM  + "' "
+		If !Empty(cSerAdi)
+			cQuery += "AND DUD_SERTMS IN  ( '" + cSerTms + "', '" + cSerAdi + "' )"
+		Else
+			cQuery += "AND DUD_SERTMS     = '" + cSerTms + "'"
+		EndIf
+		cQuery += "   AND DUD_TIPTRA     = '" + cTipTra + "'"
+		cQuery += "   AND DUD.D_E_L_E_T_ = ' ' "
+		If !Empty(cFiltroDUD)
+			cQuery += cFiltroDUD
+		EndIf
+		cQuery += "   AND DT6_FILIAL     = '" + xFilial("DT6") + "'"
+		cQuery += "   AND DT6_FILDOC     = DUD_FILDOC "
+		cQuery += "   AND DT6_DOC        = DUD_DOC "
+		cQuery += "   AND DT6_SERIE      = DUD_SERIE "
+		cQuery += "   AND DT6.D_E_L_E_T_ = ' ' "
+		If lColeta
+			If Empty(cFilDT5)
+				cQuery += "AND DT5_FILIAL = '" + xFilial("DT5") + "'"
+			Else
+				cQuery += "AND DT5_FILIAL = DUD_FILDOC "
+			EndIf
+			cQuery += "   AND DT5_FILDOC     = DUD_FILDOC "
+			cQuery += "   AND DT5_DOC        = DUD_DOC "
+			cQuery += "   AND DT5_SERIE      = DUD_SERIE "
+			cQuery += "   AND DT5.D_E_L_E_T_ = ' ' "
+		EndIf
+		cQuery += "   AND DA8_FILIAL     = '" + xFilial("DA8") + "'"
+		cQuery += "   AND DA8_COD        = '" + M->DTQ_ROTA + "'"
+		cQuery += "   AND DA8.D_E_L_E_T_ = ' ' "
+		cQuery += "   AND DA5_FILIAL     = '" + xFilial("DA5") + "'"
+		If lVgeColet
+			cQuery += "   AND DA5_COD        ='" + cZona + "'"
+		Else
+			cQuery += "   AND DA5_COD        =  DUD_ZONA "
+		EndIf
+		cQuery += "   AND DA5.D_E_L_E_T_ = ' ' "
+		cQuery += "   AND DA6_FILIAL     = '" + xFilial("DA6") + "'"
+		cQuery += "   AND DA6_PERCUR     =  DUD_ZONA "
+
+		If lVgeColet
+			cQuery += "   AND DA6_ROTA       ='" + cSetor + "'"
+		Else
+			cQuery += "   AND DA6_ROTA       =  DUD_SETOR "
+		EndIf
+		cQuery += "   AND DA6.D_E_L_E_T_ = ' ' "
+
+		If Empty(cRota)
+			cQuery += " GROUP BY "+Iif(lOrderBy,""," DUD.R_E_C_N_O_, ")+"DUD_FILDOC, DUD_DOC, DUD_SERIE, DA8_COD, DA5_COD, DA6_ROTA ) QUERY "
+			cQuery += " GROUP BY DA8_COD, DA5_COD, DA6_ROTA"
+		Else
+			cQuery += " GROUP BY "+Iif(lOrderBy,""," DUD.R_E_C_N_O_, ")+"DUD_FILDOC, DUD_DOC, DUD_SERIE"
+		EndIf
+	EndIf
+
+	If nOpcx == 3 .Or. nOpcx == 4
+		If nOpcx == 4 //Se for alteracao traz os dados que estao gravados, junto com os dados novos pra incluir
+			cQuery +=" UNION ALL "
+
+            // Viagem de entrega e status em transito.
+            If cSerTms == StrZero(3,Len(DT6->DT6_SERTMS)) .AND. M->DTQ_STATUS == "2"
+                lDTP := .T.
+            Else
+                //Verificar se há Lote com Viagem Preenchdida
+                cAliasDTP := GetNextAlias()
+                cQryDTP := " SELECT COUNT(DTP_LOTNFC) as TOT_LOTE FROM "
+                cQryDTP += RetSqlName('DTP') + " DTP WHERE "
+                cQryDTP += "  DTP.DTP_FILIAL = '" + xFilial("DTP") + "'"
+                cQryDTP += "  AND DTP.DTP_VIAGEM = '" + M->DTQ_VIAGEM + "'"
+                cQryDTP += "  AND DTP.D_E_L_E_T_ = ' ' "
+                cQryDTP := ChangeQuery(cQryDTP)
+                dbUseArea( .T., "TOPCONN", TcGenQry( , , cQryDTP ), cAliasDTP, .F., .T. )
+
+                If (cAliasDTP)->TOT_LOTE > 0 .And. lVgeMod2
+                    lDTP := .T.
+                EndIf
+                (cAliasDTP)->(dbCloseArea())
+            EndIf
+		EndIf
+		If lOrderBy
+			If Empty(cRota)
+				cQuery += " SELECT "
+				cQuery += " DA8_COD, MIN(DA8_DESC) DA8_DESC, MIN(TIPROT) TIPROT, "
+				cQuery += " DA5_COD, MIN(DA5_DESC) DA5_DESC, DA6_ROTA, MIN(DA6_REF) DA6_REF , "
+				cQuery += " MIN(DUD_STATUS) DUD_STATUS, SUM(DT6_QTDVOL) DT6_QTDVOL, SUM(DT6_PESO)   DT6_PESO  , SUM(DT6_VOLORI) DT6_VOLORI, "
+				cQuery += " SUM(DT6_PESOM3) DT6_PESOM3, SUM(DT6_VALMER) DT6_VALMER, MIN(DUD_SERTMS) DUD_SERTMS," + cQueryTp + " 'O' CVISUAL "
+				cQuery += "  FROM ( "
+				cQuery += " SELECT "
+				cQuery += " DA8_COD, MIN(DA8_DESC) DA8_DESC, MIN(DA8_TIPROT) TIPROT, "
+				cQuery += " DA5_COD, MIN(DA5_DESC) DA5_DESC, DA6_ROTA, MIN(DA6_REF) DA6_REF , "
+				cQuery += " MIN(DUD_STATUS) DUD_STATUS, MIN(DT6_QTDVOL) DT6_QTDVOL, MIN(DT6_PESO)   DT6_PESO  , MIN(DT6_VOLORI) DT6_VOLORI, "
+				cQuery += " MIN(DT6_PESOM3) DT6_PESOM3, MIN(DT6_VALMER) DT6_VALMER, MIN(DUD_SERTMS) DUD_SERTMS, DUD_FILDOC, DUD_DOC, DUD_SERIE," + cQueryTp + " 'O' CVISUAL "
+			Else
+				If lColeta
+					cQuery += " SELECT "
+					cQuery += " DUD_FILDOC, DUD_DOC, DUD_SERIE, MIN(DUD_SERTMS) DUD_SERTMS, "
+					cQuery += " MIN(DUD_STATUS) DUD_STATUS, MIN(DUD_VIAGEM) DUD_VIAGEM, MIN(DUD_SEQUEN) DUD_SEQUEN, "
+					cQuery += " MIN(DT6_BLQDOC) DT6_BLQDOC, MIN(DT6_DATEMI) DT6_DATEMI, MIN(DT6_PRZENT) DT6_PRZENT, "
+					cQuery += " MIN(DT6_QTDVOL) DT6_QTDVOL, MIN(DT6_PESO)   DT6_PESO  , MIN(DT6_PESOM3) DT6_PESOM3, "
+					cQuery += " MIN(DT6_VALMER) DT6_VALMER, MIN(DT5_SEQEND) DT5_SEQEND, MIN(DT5_DATSOL) DT5_DATSOL, "
+					cQuery += " MIN(DT5_HORSOL) DT5_HORSOL, MIN(DT5_DATPRV) DT5_DATPRV, MIN(DT5_HORPRV) DT5_HORPRV, "
+					cQuery += " MIN(DT5_CODSOL) DT5_CODSOL, "
+					cQuery += " MIN(DT5_DDD)    DT5_DDD   , MIN(DT5_TEL)    DT5_TEL   , MIN(DT6_VOLORI) DT6_VOLORI, "
+					If nOpcx == 2
+						cQuery += " MIN(DUD_ZONA) DA7_PERCUR, "
+					Else
+						cQuery += " MIN(DA6_PERCUR) DA7_PERCUR, "
+					EndIf
+					cQuery += " MIN(DA7_SEQUEN) DA7_SEQUEN, MIN(DA7_ROTA)   DA7_ROTA    "
+					If !lVgeMod2 .And. lTmsCFec
+						//-- Retorna os campos referente ao Agendamento.
+						cQuery += ", MIN(DF1_ITEAGE) DF1_ITEAGE "
+						cQuery += ", MIN(DF1_NUMAGE) DF1_NUMAGE "
+						cQuery += ", MIN(DT5_CLIDES) DT5_CLIDES "
+						cQuery += ", MIN(DT5_LOJDES) DT5_LOJDES "
+						cQuery += ", MIN(DT5_DATENT) DT5_DATENT "
+						cQuery += ", MIN(DT5_HORENT) DT5_HORENT "
+						cQuery += ", MIN(DUD_SEQENT) DUD_SEQENT "
+					EndIf
+				Else
+					cQuery += " SELECT "
+					cQuery += " DUD_FILDOC, DUD_DOC, DUD_SERIE, MIN(DUD_SERTMS) DUD_SERTMS, "
+					cQuery += " MIN(DUD_STATUS) DUD_STATUS, MIN(DUD_VIAGEM) DUD_VIAGEM, MIN(DUD_SEQUEN) DUD_SEQUEN, "
+					cQuery += " MIN(DT6_BLQDOC) DT6_BLQDOC, MIN(DT6_DATEMI) DT6_DATEMI, MIN(DT6_PRZENT) DT6_PRZENT, "
+					cQuery += " MIN(DT6_QTDVOL) DT6_QTDVOL, MIN(DT6_PESO)   DT6_PESO  , MIN(DT6_PESOM3) DT6_PESOM3, "
+					cQuery += " MIN(DT6_VALMER) DT6_VALMER, MIN(DT6_CLIREM) DT6_CLIREM, MIN(DT6_LOJREM) DT6_LOJREM, "
+					cQuery += " MIN(DT6_CLIDES) DT6_CLIDES, MIN(DT6_LOJDES) DT6_LOJDES, MIN(DA7_PERCUR) DA7_PERCUR, "
+					cQuery += " MIN(DA7_SEQUEN) DA7_SEQUEN, MIN(DA7_ROTA)   DA7_ROTA  , MIN(DT6_VOLORI) DT6_VOLORI  "
+				EndIf
+			EndIf
+		Else
+			cQuery += " SELECT "
+			cQuery += " DUD_FILDOC, DUD_DOC, DUD_SERIE, DUD.R_E_C_N_O_ DUDRECNO "
+		EndIf
+		cQuery += " FROM "
+		If lColeta .And. !lVgeMod2 .And. lTmsCFec .And. !Empty(cRota)
+			//-- Verifica se existe Agendamento associado a Solicitacao de Coleta.
+			cQuery +=   RetSqlName('DUD') + " DUD "//Movimento de Viagem
+			cQuery += "LEFT JOIN " + RetSqlName('DF1') + " DF1 ON"
+			cQuery += " DF1_FILIAL = '" + xFilial("DF1") + "'"
+			cQuery += " AND DF1_FILDOC = DUD_FILDOC"
+			cQuery += " AND DF1_DOC = DUD_DOC"
+			cQuery += " AND DF1_SERIE = DUD_SERIE"
+			cQuery += " AND DF1.D_E_L_E_T_ = ' ', "
+		Else
+			cQuery +=   RetSqlName('DUD') + " DUD, "//Movimento de Viagem
+			If lDTP
+				cQuery += RetSqlName('DTP') + " DTP, "
+			EndIf
+		EndIf
+		cQuery +=  RetSqlName('DA8') + " DA8, "//Documentos de transporte
+		cQuery +=  RetSqlName('DA7') + " DA7, " // Clientes por setor
+		cQuery +=  RetSqlName('DA9') + " DA9, "// Zonas x Rotas
+		cQuery +=  RetSqlName('DT6') + " DT6, "//Documentos de transporte
+		cQuery +=  RetSqlName('DA5') + " DA5, "//Zonas
+		cQuery +=  RetSqlName('DA6') + " DA6  " //Setor x Zonas
+		If lColeta
+			cQuery +=   ", " + RetSqlName('DT5') + " DT5 "//Solicitacao de coleta
+		EndIf
+		If !Empty(cGrpProd) //-- Filtra por Grupo de Produtos
+			If lColeta
+				cQuery += ", " + RetSqlName('SB1') + " SB1  "//Produtos
+				cQuery += ", " + RetSqlName('DUM') + " DUM "//Itens da Solicitacao de Coleta
+			Else
+				cQuery +=  ", " + RetSqlName('DTC') + " DTC "//Notas Fiscais
+				cQuery +=  ", " + RetSqlName('SB1') + " SB1 "//Produtos
+			EndIf
+		EndIf
+		cQuery += " WHERE DUD_FILIAL = '" + xFilial("DUD") + "'"
+		If !lTMSDCol
+			cQuery += " AND DUD_FILORI = '" + cFilAnt + "'"
+		EndIf
+		If !Empty(cSerAdi)
+			cQuery += "AND DUD_SERTMS IN  ( '" + cSerTms + "', '" + cSerAdi + "' )"
+		Else
+			cQuery += "AND DUD_SERTMS     = '" + cSerTms + "'"
+		EndIf
+		cQuery += " AND DUD_TIPTRA = '" + cTipTra + "'"
+		//-- Faz com que caso seja utilizado uma viagem TMSEXPRESS
+		//-- os documentos que serão utilizados serão os que já foram
+		//-- calculados para aquela viagem.
+		If lVgeMod2 .And. lVgeExpr
+			If(nCarreg == 1)//-- Caso seja uma viagem com carregamento manual.
+				cQuery += " AND DUD_STATUS = '" + StrZero(1,Len(DUD->DUD_STATUS)) + "' "
+			ElseIf(nCarreg == 2)//-- Caso seja uma viagem com carregamento automático.
+				cQuery += " AND DUD_STATUS IN ('" + StrZero(1,Len(DUD->DUD_STATUS)) + "', '" + StrZero(3,Len(DUD->DUD_STATUS)) + "' )"
+			EndIf
+			cQuery += " AND DUD_VIAGEM = '" + M->DTQ_VIAGEM + "'"
+		Else
+			cQuery += " AND DUD_STATUS = '" + cStatus + "' "
+			cQuery += " AND DUD_VIAGEM = '" + cVgeAux + "'"
+		EndIf
+		//-- Pesquisa rota por codigo de cliente
+		If ( cSerTms == StrZero( 1, Len( DC5->DC5_SERTMS ) )  .Or. cSerTms == StrZero( 3, Len( DC5->DC5_SERTMS ) ) ).And. ;
+			lPesqCCli // Se Coleta ou Entrega e Parametro MV_TMSPCLI esta ativo pesquisa codigo e cep de destino
+			cQuery += " AND ( DUD_CEPENT BETWEEN DA7_CEPDE AND DA7_CEPATE "
+			cQuery += " OR  DT6_CLIDES = DA7_CLIENT "
+			cQuery += " AND DT6_LOJDES = DA7_LOJA  )"
+		Else
+			cQuery += " AND DUD_CEPENT BETWEEN DA7_CEPDE AND DA7_CEPATE "
+		EndIf
+		cQuery += " AND DUD.D_E_L_E_T_ = ' ' "
+		If !Empty(cFiltroDUD)
+			cQuery += cFiltroDUD
+		EndIf
+
+		If nCarreg == 2
+			cQuery += " AND DUD.DUD_NUMRED = ' ' "
+		EndIf
+
+		cQuery += " AND DT6_FILIAL = '" + xFilial("DT6") + "'"
+		cQuery += " AND DT6_FILDOC = DUD_FILDOC "
+		cQuery += " AND DT6_DOC    = DUD_DOC "
+		cQuery += " AND DT6_SERIE  = DUD_SERIE "
+		cQuery += " AND DT6_STATUS <> '7'" //-- Entregue
+		cQuery += " AND DT6.D_E_L_E_T_ = ' ' "
+
+		If lDTP
+			cQuery += " AND ( DTP_LOTNFC = DT6_LOTNFC AND DTP_VIAGEM = '" +  M->DTQ_VIAGEM + "'"
+			cQuery += " OR DUD_SERTMS = '1' ) "
+		EndIf
+
+		If lColeta
+			If Empty(cFilDT5)
+				cQuery += "   AND DT5_FILIAL = '" + xFilial("DT5") + "'"
+			Else
+				cQuery += "   AND DT5_FILIAL = DUD_FILDOC "
+			EndIf
+			cQuery += "   AND DT5_FILDOC     = DUD_FILDOC "
+			cQuery += "   AND DT5_DOC        = DUD_DOC "
+			cQuery += "   AND DT5_SERIE      = DUD_SERIE "
+			cQuery += "   AND DT5.D_E_L_E_T_ = ' ' "
+		EndIf
+		If !Empty(cGrpProd) //-- Filtra Grupo de Produtos
+			If lColeta
+				cQuery += " AND DUM_FILIAL     = '" + xFilial("DUM") + "'"
+				cQuery += " AND DUM_FILORI     = DT5_FILORI "
+				cQuery += " AND DUM_NUMSOL     = DT5_NUMSOL"
+				cQuery += " AND DUM.D_E_L_E_T_ = ' ' "
+				cQuery += " AND B1_FILIAL  = '" + xFilial("SB1") + "'"
+				cQuery += " AND B1_GRUPO IN ("+cGrpProd+")"
+				cQuery += " AND B1_COD     = DUM_CODPRO "
+				cQuery += " AND SB1.D_E_L_E_T_    = ' '"
+			ElseIf !Empty(cSerAdi)
+				cQuery += " AND B1_FILIAL   = '"+xFilial("SB1")+"'"
+				cQuery += " AND B1_GRUPO IN ("+cGrpProd+")"
+				cQuery += " AND B1_COD  = DTC_CODPRO"
+				cQuery += " AND SB1.D_E_L_E_T_    = ' '"
+			Else
+				cQuery += " AND DTC_FILIAL    = '"+xFilial("DTC")+"'"
+				cQuery += " AND DTC_FILDOC    = DT6.DT6_FILDOC"
+				cQuery += " AND DTC_DOC       = DT6.DT6_DOC"
+				cQuery += " AND DTC_SERIE     = DT6.DT6_SERIE"
+				cQuery += " AND DTC_QTDVOL    > 0"
+				cQuery += " AND DTC.D_E_L_E_T_    = ' '"
+				cQuery += " AND B1_FILIAL   = '"+xFilial("SB1")+"'"
+				cQuery += " AND B1_GRUPO IN ("+cGrpProd+")"
+				cQuery += " AND B1_COD  = DTC_CODPRO"
+				cQuery += " AND SB1.D_E_L_E_T_    = ' '"
+			EndIf
+		EndIf
+		cQuery += " AND DA7_FILIAL = '" + xFilial("DA7") + "'"
+		cQuery += " AND DA7.D_E_L_E_T_ = ' ' "
+		cQuery += " AND DA6_FILIAL = '" + xFilial("DA6") + "'"
+		cQuery += " AND DA6_PERCUR = DA7_PERCUR "
+		cQuery += " AND DA6_ROTA   = DA7_ROTA "
+		cQuery += " AND DA6.D_E_L_E_T_ = ' ' "
+		If lAlianca
+			cQuery += " AND DA6_ALIANC = ' ' "
+		EndiF
+		cQuery += " AND DA5_FILIAL = '" + xFilial("DA5") + "'"
+		cQuery += " AND DA5_COD    = DA6_PERCUR "
+		cQuery += " AND DA5.D_E_L_E_T_ = ' ' "
+		cQuery += " AND DA9_FILIAL = '" + xFilial("DA9") + "'"
+		cQuery += " AND DA9_PERCUR = DA7_PERCUR "
+		cQuery += " AND DA9_ROTA   = DA7_ROTA   "
+		If !Empty(cRotGen) .And. cRota <> cRotGen //Se tiver rota generica cadastrada precisa filtrar para mostrar apenas no botao de documentos com rota generica
+			cQuery += " AND DA9_ROTEIR <> '" + cRotGen + "'"
+		EndIf
+		If !Empty(cRota)
+			cQuery += " AND DA9_ROTEIR = '" + cRota + "'"
+		EndIf
+		cQuery += " AND DA9.D_E_L_E_T_ = ' ' "
+		cQuery += " AND DA8_FILIAL = '" + xFilial("DA8") + "'"
+		cQuery += " AND DA8_COD    = DA9_ROTEIR "
+		cQuery += " AND DA8_SERTMS = '" + cSerTms + "'"
+		cQuery += " AND DA8_TIPTRA = '" + cTipTra + "'"
+		If lCdrOri
+			cQuery += " AND DA8_CDRORI = '" + cCdrOri + "'"
+		EndIf
+		cQuery += " AND DA8_ATIVO      = '1' "
+		cQuery += " AND DA8.D_E_L_E_T_ = ' ' "
+		If Empty(cRota)
+			cQuery += " GROUP BY "+Iif(lOrderBy,""," DUD.R_E_C_N_O_, ")+"DUD_FILDOC, DUD_DOC, DUD_SERIE, DA8_COD, DA5_COD, DA6_ROTA, DA7_PERCUR, DA7_ROTA, DA9_PERCUR, DA9_ROTA ) QUERY "
+			cQuery += " GROUP BY DA8_COD, DA5_COD, DA6_ROTA "
+		Else
+			cQuery += " GROUP BY "+Iif(lOrderBy,""," DUD.R_E_C_N_O_, ")+"DUD_FILDOC, DUD_DOC, DUD_SERIE"
+		EndIf
+
+		If lAlianca
+			cQuery += " UNION ALL " //Alianca
+			If lOrderBy
+				If Empty(cRota)
+					cQuery += " SELECT "
+					cQuery += " DA8_COD, MIN(DA8_DESC) DA8_DESC, MIN(TIPROT) TIPROT, "
+					cQuery += " DA5_COD, MIN(DA5_DESC) DA5_DESC, DA6_ROTA, MIN(DA6_REF) DA6_REF , "
+					cQuery += " MIN(DUD_STATUS) DUD_STATUS, SUM(DT6_QTDVOL) DT6_QTDVOL, SUM(DT6_PESO)   DT6_PESO  , SUM(DT6_VOLORI) DT6_VOLORI, "
+					cQuery += " SUM(DT6_PESOM3) DT6_PESOM3, SUM(DT6_VALMER) DT6_VALMER, MIN(DUD_SERTMS) DUD_SERTMS," + cQueryTp + " 'O' CVISUAL "
+					cQuery += "  FROM ( "
+					cQuery += " SELECT "
+					cQuery += "	DA8_COD, MIN(DA8_DESC) DA8_DESC, MIN(DA8_TIPROT) TIPROT, DA5_COD, "
+					cQuery += "	MIN(DA5_DESC) DA5_DESC , DA6_ROTA, MIN(DA6_REF) DA6_REF , MIN(DUD_STATUS) DUD_STATUS, "
+					cQuery += " MIN(DT6_QTDVOL) DT6_QTDVOL, MIN(DT6_PESO)   DT6_PESO  , MIN(DT6_PESOM3)  DT6_PESOM3   , MIN(DT6_VOLORI)  DT6_VOLORI, "
+					cQuery += " MIN(DT6_VALMER) DT6_VALMER, MIN(DUD_SERTMS) DUD_SERTMS, DUD_FILDOC, DUD_DOC, DUD_SERIE, " + cQueryTp + " 'O' CVISUAL "
+				Else
+					If lColeta
+						cQuery += " SELECT "
+						cQuery += " DUD_FILDOC, DUD_DOC, DUD_SERIE, MIN(DUD_SERTMS) DUD_SERTMS, "
+						cQuery += " MIN(DUD_STATUS) DUD_STATUS, MIN(DUD_VIAGEM) DUD_VIAGEM, MIN(DUD_SEQUEN) DUD_SEQUEN, "
+						cQuery += " MIN(DT6_BLQDOC) DT6_BLQDOC, MIN(DT6_DATEMI) DT6_DATEMI, MIN(DT6_PRZENT) DT6_PRZENT, "
+						cQuery += " MIN(DT6_QTDVOL) DT6_QTDVOL, MIN(DT6_PESO)   DT6_PESO  , MIN(DT6_PESOM3) DT6_PESOM3, "
+						cQuery += " MIN(DT6_VALMER) DT6_VALMER, MIN(DT5_SEQEND) DT5_SEQEND, MIN(DT5_DATSOL) DT5_DATSOL, "
+						cQuery += " MIN(DT5_HORSOL) DT5_HORSOL, MIN(DT5_DATPRV) DT5_DATPRV, MIN(DT5_HORPRV) DT5_HORPRV, "
+						cQuery += " MIN(DT5_CODSOL) DT5_CODSOL, "
+						cQuery += " MIN(DT5_DDD)    DT5_DDD   , MIN(DT5_TEL)    DT5_TEL   , MIN(DT6_VOLORI) DT6_VOLORI, "
+						If nOpcx == 2
+							cQuery += " MIN(DUD_ZONA) DA7_PERCUR, "
+						Else
+							cQuery += " MIN(DA6_PERCUR) DA7_PERCUR, "
+						EndIf
+						cQuery += cQueryTp + " '' DA7_SEQUEN, MIN(DA6_ROTA)   DA7_ROTA    "
+						If !lVgeMod2 .And. lTmsCFec
+							//-- Retorna os campos referente ao Agendamento.
+							cQuery += ", MIN(DF1_ITEAGE) DF1_ITEAGE "
+							cQuery += ", MIN(DF1_NUMAGE) DF1_NUMAGE "
+							cQuery += ", MIN(DT5_CLIDES) DT5_CLIDES "
+							cQuery += ", MIN(DT5_LOJDES) DT5_LOJDES "
+							cQuery += ", MIN(DT5_DATENT) DT5_DATENT "
+							cQuery += ", MIN(DT5_HORENT) DT5_HORENT "
+							cQuery += ", MIN(DUD_SEQENT) DUD_SEQENT "
+						EndIf
+					Else
+						cQuery += " SELECT "
+						cQuery += " DUD_FILDOC, DUD_DOC, DUD_SERIE, MIN(DUD_SERTMS) DUD_SERTMS, "
+						cQuery += " MIN(DUD_STATUS) DUD_STATUS, MIN(DUD_VIAGEM) DUD_VIAGEM, MIN(DUD_SEQUEN) DUD_SEQUEN, "
+						cQuery += " MIN(DT6_BLQDOC) DT6_BLQDOC, MIN(DT6_DATEMI) DT6_DATEMI, MIN(DT6_PRZENT) DT6_PRZENT, "
+						cQuery += " MIN(DT6_QTDVOL) DT6_QTDVOL, MIN(DT6_PESO)   DT6_PESO  , MIN(DT6_PESOM3) DT6_PESOM3, "
+						cQuery += " MIN(DT6_VALMER) DT6_VALMER, MIN(DT6_CLIREM) DT6_CLIREM, MIN(DT6_LOJREM) DT6_LOJREM, "
+						cQuery += " MIN(DT6_CLIDES) DT6_CLIDES, MIN(DT6_LOJDES) DT6_LOJDES, "
+						If nOpcx == 2
+							cQuery += " MIN(DUD_ZONA) DA7_PERCUR, "
+						Else
+							cQuery += " MIN(DA6_PERCUR) DA7_PERCUR, "
+						EndIf
+						cQuery += cQueryTp //-- Usado em query BD POSTGRES
+						cQuery += " ''              DA7_SEQUEN, MIN(DA6_ROTA)   DA7_ROTA  , MIN(DT6_VOLORI) DT6_VOLORI  "
+					EndIf
+				EndIf
+			Else
+				cQuery += " SELECT "
+				cQuery += " DUD_FILDOC, DUD_DOC, DUD_SERIE, DUD.R_E_C_N_O_ DUDRECNO "
+			EndIf
+			cQuery += " FROM "
+			If lColeta .And. !lVgeMod2 .And. lTmsCFec .And. !Empty(cRota)
+				//-- Verifica se existe Agendamento associado a Solicitacao de Coleta.
+				cQuery +=   RetSqlName('DUD') + " DUD "//Movimento de Viagem
+				cQuery += "LEFT JOIN " + RetSqlName('DF1') + " DF1 "
+				cQuery += "  ON DF1_FILIAL = '" + xFilial("DF1") + "'"
+				cQuery += " AND DF1_FILDOC = DUD_FILDOC"
+				cQuery += " AND DF1_DOC = DUD_DOC"
+				cQuery += " AND DF1_SERIE = DUD_SERIE"
+				cQuery += " AND DF1.D_E_L_E_T_ = ' ', "
+			Else
+				cQuery +=   RetSqlName('DUD') + " DUD, "//Movimento de Viagem
+			EndIf
+			cQuery +=  RetSqlName('DA8') + " DA8, " // Rotas
+			cQuery +=  RetSqlName('DA9') + " DA9, "//Documentos de transporte
+			cQuery +=  RetSqlName('DT6') + " DT6, "//Documentos de transporte
+			cQuery +=  RetSqlName('DA5') + " DA5, "//Zonas
+			cQuery +=  RetSqlName('DA6') + " DA6  " //Setor x Zonas
+			If lColeta
+				cQuery +=   ", " + RetSqlName('DT5') + " DT5 "//Solicitacao de coleta
+			EndIf
+			If !Empty(cGrpProd) //-- Filtra por Grupo de Produtos
+				If lColeta
+					cQuery += ", " + RetSqlName('SB1') + " SB1  "//Produtos
+					cQuery += ", " + RetSqlName('DUM') + " DUM "//Itens da Solicitacao de Coleta
+				Else
+					cQuery +=  ", " + RetSqlName('DTC') + " DTC "//Notas Fiscais
+					cQuery +=  ", " + RetSqlName('SB1') + " SB1 "//Produtos
+				EndIf
+			EndIf
+			cQuery += " WHERE DUD_FILIAL = '" + xFilial("DUD") + "'"
+			If !lTMSDCol
+				cQuery += " AND DUD_FILORI = '" + cFilAnt + "'"
+			EndIf
+			cQuery += " AND DUD_SERTMS = '" + cSerTms + "'"
+			cQuery += " AND DUD_TIPTRA = '" + cTipTra + "'"
+			cQuery += " AND DUD_STATUS = '" + cStatus + "' "
+			cQuery += " AND DUD_VIAGEM = '" + cVgeAux + "'"
+			cQuery += " AND DUD.D_E_L_E_T_ = ' ' "
+			If !Empty(cFiltroDUD)
+				cQuery += cFiltroDUD
+			EndIf
+			cQuery += " AND DT6_FILIAL = '" + xFilial("DT6") + "'"
+			cQuery += " AND DT6_FILDOC = DUD_FILDOC "
+			cQuery += " AND DT6_DOC    = DUD_DOC "
+			cQuery += " AND DT6_SERIE  = DUD_SERIE "
+			cQuery += " AND DT6_ALIANC = DA6_ALIANC "
+			cQuery += " AND DT6.D_E_L_E_T_ = ' ' "
+			If lColeta
+				If Empty(cFilDT5)
+					cQuery += " AND DT5_FILIAL = '" + xFilial("DT5") + "'"
+				Else
+					cQuery += " AND DT5_FILIAL = DUD_FILDOC "
+				EndIf
+				cQuery += "   AND DT5_FILDOC     = DUD_FILDOC "
+				cQuery += "   AND DT5_DOC        = DUD_DOC "
+				cQuery += "   AND DT5_SERIE      = DUD_SERIE "
+				cQuery += "   AND DT5.D_E_L_E_T_ = ' ' "
+			EndIf
+			If !Empty(cGrpProd) //-- Filtra Grupo de Produtos
+				If lColeta
+					cQuery += " AND DUM_FILIAL     = '" + xFilial("DUM") + "'"
+					cQuery += " AND DUM_FILORI     = DT5_FILORI "
+					cQuery += " AND DUM_NUMSOL     = DT5_NUMSOL"
+					cQuery += " AND DUM.D_E_L_E_T_ = ' ' "
+					cQuery += " AND B1_FILIAL  = '" + xFilial("SB1") + "'"
+					cQuery += " AND B1_GRUPO IN ("+cGrpProd+")"
+					cQuery += " AND B1_COD     = DUM_CODPRO "
+					cQuery += " AND SB1.D_E_L_E_T_    = ' '"
+				Else
+					cQuery += " AND DTC_FILIAL     = '"+xFilial("DTC")+"'"
+					cQuery += " AND DTC_FILDOC    = DT6.DT6_FILDOC"
+					cQuery += " AND DTC_DOC       = DT6.DT6_DOC"
+					cQuery += " AND DTC_SERIE     = DT6.DT6_SERIE"
+					cQuery += " AND DTC_QTDVOL    > 0"
+					cQuery += " AND DTC.D_E_L_E_T_    = ' '"
+					cQuery += " AND B1_FILIAL   = '"+xFilial("SB1")+"'"
+					cQuery += " AND B1_GRUPO IN ("+cGrpProd+")"
+					cQuery += " AND B1_COD  = DTC_CODPRO"
+					cQuery += " AND SB1.D_E_L_E_T_    = ' '"
+				EndIf
+			EndIf
+			cQuery += " AND DA6_FILIAL = '" + xFilial("DA6") + "'"
+			cQuery += " AND DA6_ALIANC <> '  ' "
+			cQuery += " AND DA6.D_E_L_E_T_ = ' ' "
+			cQuery += " AND DA5_FILIAL = '" + xFilial("DA5") + "'"
+			cQuery += " AND DA5_COD    = DA6_PERCUR "
+			cQuery += " AND DA5.D_E_L_E_T_ = ' ' "
+			cQuery += " AND DA8_FILIAL = '" + xFilial("DA8") + "'"
+			If !Empty(cRotGen)//Se tiver rota generica cadastrada precisa filtrar para mostrar apenas no botao de rota generica
+				cQuery += " AND DA8_COD <> '" + cRotGen + "'"
+			EndIf
+			If !Empty(cRota)
+				cQuery += " AND DA8_COD = '" + cRota + "'"
+			EndIf
+			cQuery += " AND DA8_SERTMS = '" + cSerTms + "'"
+			cQuery += " AND DA8_TIPTRA = '" + cTipTra + "'"
+			If lCdrOri
+				cQuery += " AND DA8_CDRORI = '" + cCdrOri + "'"
+			EndIf
+			cQuery += " AND DA8_ATIVO      = '1' "
+			cQuery += " AND DA8.D_E_L_E_T_ = ' ' "
+			cQuery += " AND DA9_FILIAL     = '" + xFilial("DA9") + "'"
+			cQuery += " AND DA9_ROTEIR     = DA8_COD "
+			cQuery += " AND DA9_PERCUR     = DA5_COD "
+			cQuery += " AND DA9_ROTA       = DA6_PERCUR "
+			cQuery += " AND DA9.D_E_L_E_T_ = ' ' "
+			If Empty(cRota)
+				cQuery += " GROUP BY "+Iif(lOrderBy,""," DUD.R_E_C_N_O_, ")+"DUD_FILDOC, DUD_DOC, DUD_SERIE, DA8_COD, DA5_COD, DA6_ROTA ) QUERY "
+				cQuery += " GROUP BY DA8_COD, DA5_COD, DA6_ROTA"
+			Else
+				cQuery += " GROUP BY "+Iif(lOrderBy,""," DUD.R_E_C_N_O_, ")+"DUD_FILDOC, DUD_DOC, DUD_SERIE"
+			EndIf
+		EndIf
+
+		//-- Rota generica de entrega
+		If	!lVgeExpr .And. nRotGen == 1 .And. !Empty(cRotGen) .And. ( Empty(cRota) .Or. ( !Empty(cRota) .And. cRotGen == cRota ))
+			cQuery += " UNION ALL"
+			If lOrderBy
+				If Empty(cRota)
+					cQuery += " SELECT "
+					cQuery += " DA8_COD, MIN(DA8_DESC) DA8_DESC, MIN(TIPROT) TIPROT, "
+					cQuery += " DA5_COD, MIN(DA5_DESC) DA5_DESC, DA6_ROTA, MIN(DA6_REF) DA6_REF , "
+					cQuery += " MIN(DUD_STATUS) DUD_STATUS, SUM(DT6_QTDVOL) DT6_QTDVOL, SUM(DT6_PESO)   DT6_PESO  , SUM(DT6_VOLORI) DT6_VOLORI, "
+					cQuery += " SUM(DT6_PESOM3) DT6_PESOM3, SUM(DT6_VALMER) DT6_VALMER, MIN(DUD_SERTMS) DUD_SERTMS," + cQueryTp + " 'O' CVISUAL "
+					cQuery += "  FROM ( "
+					cQuery += " SELECT "
+					cQuery += " DA8_COD, MIN(DA8_DESC) DA8_DESC, MIN(DA8_TIPROT) TIPROT, DA5_COD, "
+					cQuery += " MIN(DA5_DESC) DA5_DESC, DA6_ROTA, MIN(DA6_REF) DA6_REF, "
+					cQuery += " MIN(DUD_STATUS) DUD_STATUS, MIN(DT6_QTDVOL) DT6_QTDVOL, MIN(DT6_PESO)   DT6_PESO  , SUM(DT6_VOLORI)  DT6_VOLORI   , "
+					cQuery += " MIN(DT6_PESOM3) DT6_PESOM3, MIN(DT6_VALMER) DT6_VALMER, MIN(DUD_SERTMS) DUD_SERTMS, DUD_FILDOC, DUD_DOC, DUD_SERIE, "
+					cQuery += cQueryTp + " 'O' CVISUAL"
+				Else
+					If lColeta
+						cQuery += " SELECT "
+						cQuery += " DUD_FILDOC, DUD_DOC, DUD_SERIE, MIN(DUD_SERTMS) DUD_SERTMS, "
+						cQuery += " MIN(DUD_STATUS) DUD_STATUS, MIN(DUD_VIAGEM) DUD_VIAGEM, MIN(DUD_SEQUEN) DUD_SEQUEN, "
+						cQuery += " MIN(DT6_BLQDOC) DT6_BLQDOC, MIN(DT6_DATEMI) DT6_DATEMI, MIN(DT6_PRZENT) DT6_PRZENT, "
+						cQuery += " MIN(DT6_QTDVOL) DT6_QTDVOL, MIN(DT6_PESO)   DT6_PESO  , MIN(DT6_PESOM3) DT6_PESOM3, "
+						cQuery += " MIN(DT6_VALMER) DT6_VALMER, MIN(DT5_SEQEND) DT5_SEQEND, MIN(DT5_DATSOL) DT5_DATSOL, "
+						cQuery += " MIN(DT5_HORSOL) DT5_HORSOL, MIN(DT5_DATPRV) DT5_DATPRV, MIN(DT5_HORPRV) DT5_HORPRV, "
+						cQuery += " MIN(DT5_CODSOL) DT5_CODSOL, "
+						cQuery += " MIN(DT5_DDD)    DT5_DDD   , MIN(DT5_TEL)    DT5_TEL   , MIN(DT6_VOLORI) DT6_VOLORI, "
+						If nOpcx == 2
+							cQuery += " MIN(DUD_ZONA) DA7_PERCUR, "
+						Else
+							cQuery += " MIN(DA6_PERCUR) DA7_PERCUR, "
+						EndIf
+
+						cQuery += cQueryTp+" '' DA7_SEQUEN, MIN(DA6_ROTA)   DA7_ROTA   "
+						If !lVgeMod2 .And. lTmsCFec
+							//-- Retorna os campos referente ao Agendamento.
+							cQuery += ", MIN(DF1_ITEAGE) DF1_ITEAGE "
+							cQuery += ", MIN(DF1_NUMAGE) DF1_NUMAGE "
+							cQuery += ", MIN(DT5_CLIDES) DT5_CLIDES "
+							cQuery += ", MIN(DT5_LOJDES) DT5_LOJDES "
+							cQuery += ", MIN(DT5_DATENT) DT5_DATENT "
+							cQuery += ", MIN(DT5_HORENT) DT5_HORENT "
+							cQuery += ", MIN(DUD_SEQENT) DUD_SEQENT "
+						EndIf
+					Else
+						cQuery += " SELECT "
+						cQuery += " DUD_FILDOC, DUD_DOC, DUD_SERIE, MIN(DUD_SERTMS) DUD_SERTMS, "
+						cQuery += " MIN(DUD_STATUS) DUD_STATUS, MIN(DUD_VIAGEM) DUD_VIAGEM, MIN(DUD_SEQUEN) DUD_SEQUEN, "
+						cQuery += " MIN(DT6_BLQDOC) DT6_BLQDOC, MIN(DT6_DATEMI) DT6_DATEMI, MIN(DT6_PRZENT) DT6_PRZENT, "
+						cQuery += " MIN(DT6_QTDVOL) DT6_QTDVOL, MIN(DT6_PESO)   DT6_PESO  , MIN(DT6_PESOM3) DT6_PESOM3, "
+						cQuery += " MIN(DT6_VALMER) DT6_VALMER, MIN(DT6_CLIREM) DT6_CLIREM, MIN(DT6_LOJREM) DT6_LOJREM, "
+						cQuery += " MIN(DT6_CLIDES) DT6_CLIDES, MIN(DT6_LOJDES) DT6_LOJDES, "
+						If nOpcx == 2
+							cQuery += " MIN(DUD_ZONA) DA7_PERCUR, "
+						Else
+							cQuery += " MIN(DA6_PERCUR) DA7_PERCUR, "
+						EndIf
+						cQuery += cQueryTp //-- Usado em query BD POSTGRES
+						cQuery += " ''              DA7_SEQUEN, MIN(DA6_ROTA)  DA7_ROTA   , MIN(DT6_VOLORI) DT6_VOLORI  "
+					EndIf
+				EndIf
+			Else
+				cQuery += " SELECT "
+				cQuery += " DUD_FILDOC, DUD_DOC, DUD_SERIE, DUD.R_E_C_N_O_ DUDRECNO "
+			EndIf
+			cQuery += " FROM "
+			If lColeta .And. !lVgeMod2 .And. lTmsCFec .And. !Empty(cRota)
+				//-- Verifica se existe Agendamento associado a Solicitacao de Coleta.
+				cQuery +=   RetSqlName('DUD') + " DUD "//Movimento de Viagem
+				cQuery += "LEFT JOIN " + RetSqlName('DF1') + " DF1 ON"
+				cQuery += " DF1_FILIAL = '" + xFilial("DF1") + "'"
+				cQuery += " AND DF1_FILDOC = DUD_FILDOC"
+				cQuery += " AND DF1_DOC = DUD_DOC"
+				cQuery += " AND DF1_SERIE = DUD_SERIE"
+				cQuery += " AND DF1.D_E_L_E_T_ = ' ', "
+			Else
+				cQuery +=   RetSqlName('DUD') + " DUD, "//Movimento de Viagem
+			EndIf
+			cQuery += RetSqlName('DT6') + " DT6, "
+			cQuery += RetSqlName('DA8') + " DA8, "
+			cQuery += RetSqlName('DA9') + " DA9, "
+			cQuery += RetSqlName('DA5') + " DA5, "
+			cQuery += RetSqlName('DA6') + " DA6 "
+			If lColeta
+				cQuery +=   ", " + RetSqlName('DT5') + " DT5 "//Solicitacao de coleta
+			EndIf
+			If !Empty(cGrpProd) //-- Filtra por Grupo de Produtos
+				If lColeta
+					cQuery += ", " + RetSqlName('SB1') + " SB1  "//Produtos
+					cQuery += ", " + RetSqlName('DUM') + " DUM "//Itens da Solicitacao de Coleta
+				Else
+					cQuery +=  ", " + RetSqlName('DTC') + " DTC "//Notas Fiscais
+					cQuery +=  ", " + RetSqlName('SB1') + " SB1 "//Produtos
+				EndIf
+			EndIf
+			cQuery += " WHERE DUD_FILIAL   = '" + xFilial("DUD") + "'"
+			If !lTMSDCol
+				cQuery += " AND DUD_FILORI     = '" + cFilAnt + "'"
+			EndIf
+			cQuery += " AND DUD_SERTMS     = '" + cSerTms + "'"
+			cQuery += " AND DUD_TIPTRA     = '" + cTipTra + "'"
+			cQuery += " AND DUD_STATUS     = '" + cStatus + "'"
+			cQuery += " AND DUD_VIAGEM     = '" + cVgeAux + "'"
+			cQuery += " AND DUD.D_E_L_E_T_ = ' ' "
+			If !Empty(cFiltroDUD)
+				cQuery += cFiltroDUD
+			EndIf
+			cQuery += " AND DT6_FILIAL     = '" + xFilial("DT6") + "'"
+			cQuery += " AND DT6_FILDOC     = DUD_FILDOC "
+			cQuery += " AND DT6_DOC        = DUD_DOC "
+			cQuery += " AND DT6_SERIE      = DUD_SERIE "
+			cQuery += " AND DT6.D_E_L_E_T_ = ' ' "
+			If lColeta
+				If Empty(cFilDT5)
+					cQuery += "   AND DT5_FILIAL = '" + xFilial("DT5") + "'"
+				Else
+					cQuery += "   AND DT5_FILIAL = DUD_FILDOC "
+				EndIf
+				cQuery += "   AND DT5_FILDOC     = DUD_FILDOC "
+				cQuery += "   AND DT5_DOC        = DUD_DOC "
+				cQuery += "   AND DT5_SERIE      = DUD_SERIE "
+				cQuery += "   AND DT5.D_E_L_E_T_ = ' ' "
+			EndIf
+			If !Empty(cGrpProd) //-- Filtra Grupo de Produtos
+				If lColeta
+					cQuery += " AND DUM_FILIAL     = '" + xFilial("DUM") + "'"
+					cQuery += " AND DUM_FILORI     = DT5_FILORI "
+					cQuery += " AND DUM_NUMSOL     = DT5_NUMSOL"
+					cQuery += " AND DUM.D_E_L_E_T_ = ' ' "
+					cQuery += " AND B1_FILIAL  = '" + xFilial("SB1") + "'"
+					cQuery += " AND B1_GRUPO IN ("+cGrpProd+")"
+					cQuery += " AND B1_COD     = DUM_CODPRO "
+					cQuery += " AND SB1.D_E_L_E_T_    = ' '"
+				Else
+					cQuery += " AND DTC_FILIAL     = '"+xFilial("DTC")+"'"
+					cQuery += " AND DTC_FILDOC    = DT6.DT6_FILDOC"
+					cQuery += " AND DTC_DOC       = DT6.DT6_DOC"
+					cQuery += " AND DTC_SERIE     = DT6.DT6_SERIE"
+					cQuery += " AND DTC_QTDVOL    > 0"
+					cQuery += " AND DTC.D_E_L_E_T_    = ' '"
+					cQuery += " AND B1_FILIAL   = '"+xFilial("SB1")+"'"
+					cQuery += " AND B1_GRUPO IN ("+cGrpProd+")"
+					cQuery += " AND B1_COD  = DTC_CODPRO"
+					cQuery += " AND SB1.D_E_L_E_T_    = ' '"
+				EndIf
+			EndIf
+			cQuery += " AND DA8_FILIAL     = '" + xFilial("DA8") + "'"
+			cQuery += " AND DA8_SERTMS     = '" + cSerTms + "'"
+			cQuery += " AND DA8_TIPTRA     = '" + cTipTra + "'"
+			cQuery += " AND DA8_COD        = '" + cRotGen + "'"
+			If lCdrOri
+				cQuery += " AND DA8_CDRORI     = '" + cCdrOri + "'"
+			EndIf
+			cQuery += " AND DA8_ATIVO      = '1' "
+			cQuery += " AND DA8.D_E_L_E_T_ = ' ' "
+			cQuery += " AND DA9_FILIAL     = '" + xFilial("DA9") + "'"
+			cQuery += " AND DA9_ROTEIR     = DA8_COD "
+			cQuery += " AND DA9.D_E_L_E_T_ = ' ' "
+			cQuery += " AND DA5_FILIAL     = '" + xFilial("DA5") + "'"
+			cQuery += " AND DA5_COD        = DA9_PERCUR "
+			cQuery += " AND DA5.D_E_L_E_T_ = ' ' "
+			cQuery += " AND DA6_FILIAL     = '" + xFilial("DA6") + "'"
+			cQuery += " AND DA6_PERCUR     = DA9_PERCUR "
+			cQuery += " AND DA6_ROTA       = DA9_ROTA "
+			If lAlianca
+				cQuery += " AND DA6_ALIANC = ' ' "
+			EndIf
+			cQuery += " AND DA6.D_E_L_E_T_ = ' ' "
+			cQuery += " AND NOT EXISTS ( "
+			cQuery += " SELECT 1 "
+			cQuery += " FROM "
+			cQuery += RetSqlName('DUD') + " DUD, "
+			cQuery += RetSqlName('DT6') + " DT61, "
+			cQuery += RetSqlName('DA8') + " DA8, "
+			cQuery += RetSqlName('DA9') + " DA9, "
+			cQuery += RetSqlName('DA6') + " DA6, "
+			cQuery += RetSqlName('DA7') + " DA7 "
+			If lColeta
+				cQuery +=   ", " + RetSqlName('DT5') + " DT5 "//Solicitacao de coleta
+			EndIf
+			If !Empty(cGrpProd) //-- Filtra por Grupo de Produtos
+				If lColeta
+					cQuery += ", " + RetSqlName('SB1') + " SB1  "//Produtos
+					cQuery += ", " + RetSqlName('DUM') + " DUM "//Itens da Solicitacao de Coleta
+				Else
+					cQuery +=  ", " + RetSqlName('DTC') + " DTC "//Notas Fiscais
+					cQuery +=  ", " + RetSqlName('SB1') + " SB1 "//Produtos
+				EndIf
+			EndIf
+			cQuery += " WHERE "
+			cQuery += " DUD_FILIAL         = '" + xFilial("DUD") + "'"
+			cQuery += " AND DUD_FILDOC     = DT6.DT6_FILDOC "
+			cQuery += " AND DUD_DOC        = DT6.DT6_DOC    "
+			cQuery += " AND DUD_SERIE      = DT6.DT6_SERIE  "
+			If !lTMSDCol
+				cQuery += " AND DUD_FILORI     = '" + cFilAnt + "'"
+			EndIf
+			cQuery += " AND DUD_SERTMS     = '" + cSerTms + "'"
+			cQuery += " AND DUD_TIPTRA     = '" + cTipTra + "'"
+			cQuery += " AND DUD_STATUS     = '" + cStatus + "'"
+			cQuery += " AND DUD_VIAGEM     = '" + cVgeAux + "'"
+			cQuery += " AND DUD_CEPENT BETWEEN DA7_CEPDE AND DA7_CEPATE "
+			cQuery += " AND DUD.D_E_L_E_T_  = ' ' "
+			cQuery += " AND DT61.DT6_FILIAL = '" + xFilial("DT6") + "'"
+			cQuery += " AND DT61.DT6_FILDOC = DUD_FILDOC "
+			cQuery += " AND DT61.DT6_DOC    = DUD_DOC "
+			cQuery += " AND DT61.DT6_SERIE  = DUD_SERIE "
+			cQuery += " AND DT61.D_E_L_E_T_ = ' ' "
+			If lColeta
+				If Empty(cFilDT5)
+					cQuery += "   AND DT5_FILIAL = '" + xFilial("DT5") + "'"
+				Else
+					cQuery += "   AND DT5_FILIAL = DUD_FILDOC "
+				EndIf
+				cQuery += "   AND DT5_FILDOC     = DUD_FILDOC "
+				cQuery += "   AND DT5_DOC        = DUD_DOC "
+				cQuery += "   AND DT5_SERIE      = DUD_SERIE "
+				cQuery += "   AND DT5.D_E_L_E_T_ = ' ' "
+			EndIf
+			If !Empty(cGrpProd) //-- Filtra Grupo de Produtos
+				If lColeta
+					cQuery += " AND DUM_FILIAL     = '" + xFilial("DUM") + "'"
+					cQuery += " AND DUM_FILORI     = DT5_FILORI "
+					cQuery += " AND DUM_NUMSOL     = DT5_NUMSOL"
+					cQuery += " AND DUM.D_E_L_E_T_ = ' ' "
+					cQuery += " AND B1_FILIAL  = '" + xFilial("SB1") + "'"
+					cQuery += " AND B1_GRUPO IN ("+cGrpProd+")"
+					cQuery += " AND B1_COD     = DUM_CODPRO "
+					cQuery += " AND SB1.D_E_L_E_T_    = ' '"
+				Else
+					cQuery += " AND DTC_FILIAL     = '"+xFilial("DTC")+"'"
+					cQuery += " AND DTC_FILDOC    = DT61.DT6_FILDOC"
+					cQuery += " AND DTC_DOC       = DT61.DT6_DOC"
+					cQuery += " AND DTC_SERIE     = DT61.DT6_SERIE"
+					cQuery += " AND DTC_QTDVOL    > 0"
+					cQuery += " AND DTC.D_E_L_E_T_    = ' '"
+					cQuery += " AND B1_FILIAL   = '"+xFilial("SB1")+"'"
+					cQuery += " AND B1_GRUPO IN ("+cGrpProd+")"
+					cQuery += " AND B1_COD  = DTC_CODPRO"
+					cQuery += " AND SB1.D_E_L_E_T_    = ' '"
+				EndIf
+			EndIf
+			cQuery += " AND DA8_FILIAL     = '" + xFilial("DA8") + "'"
+			cQuery += " AND DA8_SERTMS     = '" + cSerTms + "'"
+			cQuery += " AND DA8_TIPTRA     = '" + cTipTra + "'"
+			cQuery += " AND DA8_COD       <> '" + cRotGen + "'"
+			If lCdrOri
+				cQuery += " AND DA8_CDRORI     = '" + cCdrOri + "'"
+			EndIf
+			cQuery += " AND DA8_ATIVO      = '1' "
+			cQuery += " AND DA8.D_E_L_E_T_ = ' ' "
+			cQuery += " AND DA9_FILIAL     = '" + xFilial("DA9") + "'"
+			cQuery += " AND DA9_ROTEIR     = DA8_COD "
+			cQuery += " AND DA9.D_E_L_E_T_ = ' ' "
+			cQuery += " AND DA6_FILIAL     = '" + xFilial("DA6") + "'"
+			cQuery += " AND DA6_PERCUR     = DA9_PERCUR "
+			cQuery += " AND DA6_ROTA       = DA9_ROTA "
+			If lAlianca
+				cQuery += " AND DA6_ALIANC = ' ' "
+			EndIf
+			cQuery += " AND DA6.D_E_L_E_T_ = ' ' "
+			cQuery += " AND DA7_FILIAL     = '" + xFilial("DA7") + "'"
+			cQuery += " AND DA7_PERCUR     = DA9_PERCUR "
+			cQuery += " AND DA7_ROTA       = DA9_ROTA "
+			cQuery += " AND DA7.D_E_L_E_T_ = ' ' )"
+			If Empty(cRota)
+				cQuery += " GROUP BY "+Iif(lOrderBy,""," DUD.R_E_C_N_O_, ")+"DUD_FILDOC, DUD_DOC, DUD_SERIE, DA8_COD, DA5_COD, DA6_ROTA ) QUERY "
+				cQuery += " GROUP BY DA8_COD, DA5_COD, DA6_ROTA "
+			Else
+				cQuery += " GROUP BY "+Iif(lOrderBy,""," DUD.R_E_C_N_O_, ")+"DUD_FILDOC, DUD_DOC, DUD_SERIE"
+			EndIf
+		EndIf
+	EndIf
+	If !Empty(cRota) .And. lOrderBy
+		cQuery += " ORDER BY "+Iif(lOrderBy,""," DUD.R_E_C_N_O_, ")+"DUD_FILDOC, DUD_DOC, DUD_SERIE "
+	EndIf
+	cQuery := ChangeQuery(cQuery)
+EndIf
+
+
+Return cQuery
+
+
+//--------------------------------------------------
+/*/{Protheus.doc} NoFieldsSDG
+Retorna os campos da SDG que não irão entrar no ModelDef e ViewDef
+@type  Static Function
+@author Caio Murakami
+@since 22/07/2020
+@version 1.00
+@param nType, numeric , 1=Model;2=View
+@return cCampos, char , Campos que não participam da estrutura
+/*/
+//--------------------------------------------------
+Static Function NoFieldsSDG( nType )
+Local cCampos	:= ""
+
+Default nType	:= 1
+
+cCampos	:= '|DG_FILIAL|DG_BAIXA|DG_ESTDOC|DG_CODVEI|DG_DESVEI|DG_FILORI|DG_VIAGEM|DG_PERC'
+cCampos	+= '|DG_TES|DG_COND|DG_NUMPARC|DG_PERVENC|DG_HISTOR' 
+cCampos	+= '|DG_SEQMOV|DG_DTLANC|DG_DTLAEMI|DG_CODCAR'
+cCampos	+= '|DG_SEQCAR|DG_TIPUSO|DG_IDENT|DG_NUMCTC|DG_INTMOV|DG_IDCTMS'
+cCampos	+= '|DG_NOMFOR|DG_FILFRT|DG_DOCFRT|DG_SERFRT'
+
+If nType == 1 
+
+ElseIf nType == 2
+	cCampos	+= '|DG_DOC|DG_EMISSAO|DG_NUMSEQ|DG_ORIGEM|DG_STATUS'
+	cCampos	+= '|DG_SEQORI|DG_DATBAI|DG_MOTBAI|DG_TITGER|DG_ORITIT'
+	cCampos += '|DG_CODFOR|DG_LOJFOR|'
+EndIf
+
+Return cCampos
+
+//-------------------------------------------------------------------------------------------------
+/*/{Protheus.doc} TMF60RdVge
+Redespacho Adicional 
+@type Static Function
+@author Katia
+@version 12.1.30
+@return Nil
+/*/
+//-------------------------------------------------------------------------------------------------
+Static Function TMF60RdVge(oModel)
+Local oRadio     := Nil
+Local nRadio     := 1
+Local oDlg		 := Nil
+Local oBold		 := Nil
+Local nOpca		 := 0
+Local nOperation := oModel:GetOperation()
+Local lContinua  := .T.
+
+lContinua:= nOperation == MODEL_OPERATION_INSERT .Or. nOperation ==  MODEL_OPERATION_UPDATE
+If lContinua .And. M->DTQ_SERTMS == StrZero(2,Len(DTQ->DTQ_SERTMS))
+	lContinua:= .F.
+EndIf
+
+If lContinua
+	DEFINE MSDIALOG oDlg TITLE STR0021 FROM 09,0 TO 20,70 OF oMainWnd // "Tela"
+	DEFINE FONT oBold NAME "Arial" SIZE 0, -13 BOLD
+	@ 03, 14 SAY STR0023 FONT oBold PIXEL //"Repetir o Redespacho Adicional:"
+	@ 14, 00 TO 16 ,400 LABEL '' OF oDlg  PIXEL // Linha
+	@ 30, 30 RADIO oRadio VAR nRadio 3D SIZE 190, 11 PROMPT STR0025,STR0026 of oDlg PIXEL 					
+	oRadio:SetEnable( .T. )
+						
+	DEFINE SBUTTON  oBut1 FROM 065,120 TYPE 1 OF oDlg ENABLE ACTION (nOpca := 1,oDlg:End())
+	DEFINE SBUTTON  oBut2 FROM 065,150 TYPE 2 OF oDlg ENABLE ACTION (nOpca := 0,oDlg:End())	
+	oBut2:SetFocus()						
+	ACTIVATE MSDIALOG oDlg CENTERED  
+
+	If nOpca == 1
+		FwMsgRun( ,{|| TF65RedAdc(nRadio)} , STR0024 , STR0021 )  //Processando
+	EndIf
+EndIf
+
+Return Nil
+
+/*{Protheus.doc} TMFSetStat
+Seta variáveis estaticas
+@type Function
+@author Valdemar Roberto Mognon
+@since 17/08/2020
+@version P12 R12.1.29
+@param param, param_type, param_descr
+@return return, return_type, return_description
+@example TMSAF60()
+(examples)
+@see (links_or_references)
+*/
+Function TMFSetStat(cVar,xCont)
+
+&(cVar) := xCont
+
+Return
+
+/*{Protheus.doc} TMFGetStat
+Seta variáveis estaticas
+@type Function
+@author Valdemar Roberto Mognon
+@since 17/08/2020
+@version P12 R12.1.29
+@param param, param_type, param_descr
+@return return, return_type, return_description
+@example TMSAF60()
+(examples)
+@see (links_or_references)
+*/
+Function TMFGetStat(cVar)
+
+Return &(cVar)
+
+/*{Protheus.doc} TF60DudStat
+Retorna status DUD
+@type Function
+@author Caio Murakami
+@since 03/09/2020
+@version P12 R12.1.29
+@param param, param_type, param_descr
+@return return, return_type, return_description
+@example TMSAF60()
+(examples)
+@see (links_or_references)
+*/
+Function TF60DudStat( cFilDoc , cDoc , cSerie, cFilOri , cViagem )
+Local cStatus		:= ""
+
+Default cFilDoc		:= ""
+Default cDoc		:= ""
+Default cSerie		:= ""
+Default cFilOri		:= ""
+Default cViagem		:= ""
+
+cStatus	:= Posicione("DUD",1,xFilial("DUD") + cFilDoc + cDoc + cSerie + cFilOri + cViagem , "DUD_STATUS")
+
+Return cStatus 
+
+//-------------------------------------------------------------------
+/* {Protheus.doc} TF60Button
+
+Cria botão para adicionar multiplos documentos na Grid
+
+@author  Caio Murakami
+@since   10/09/2020
+@version 1.0
+*/
+//-------------------------------------------------------------------
+Static Function TF60Button( oPanel )
+Local oTBitmap1	:= Nil 
+
+oTBitmap1 := TBitmap():New(25,03,260,184,,"BMPVISUAL",.T.,oPanel,;
+        {||TF60BmpDoc()},,.F.,.F.,,,.F.,,.T.,,.F.)
+oTBitmap1:lAutoSize := .T.
+
+Return NIL
+
+//-------------------------------------------------------------------
+/* {Protheus.doc} TF60BmpDoc
+Função para acionar a chamada da consulta para multiplos documentos
+@author  Caio Murakami
+@since   11/09/2020
+@version 1.0
+*/
+//-------------------------------------------------------------------
+Static Function TF60BmpDoc()
+Local lRet	:= .T. 
+Local oModel	:= FWModelActive()
+
+If oModel:GetOperation() <> MODEL_OPERATION_INSERT .And. oModel:GetOperation() <> MODEL_OPERATION_UPDATE
+	lRet	:= .F. 
+ElseIf Empty(FwFldGet("DTQ_SERTMS"))
+	lRet	:= .F. 
+	Help('',1,"OBRIGAT",,FWX3Titulo('DTQ_SERTMS'),04,01)
+ElseIF Empty( FwFldGet("DTQ_ROTA") )
+	lRet	:= .F. 
+	Help('',1,"OBRIGAT",,FWX3Titulo('DTQ_ROTA'),04,01)
+Else
+	TF60F3Doc(.T.)
+EndIf 
+
+Return lRet 
+
+//-------------------------------------------------------------------
+/* {Protheus.doc} TF60AddDoc
+
+Função para adicionar documentos na DM3
+
+@author  Caio Murakami
+@since   10/09/2020
+@version 1.0
+*/
+//-------------------------------------------------------------------
+Function TF60AddDoc(cFilDoc,cDoc,cSerie)
+Local lRet			:= .T. 
+Local oModel		:= FWModelActive()
+Local oMdlDM3		:= oModel:GetModel("MdGridDM3")
+Local nAux			:= 0 
+Local oView			:= FwViewActive()
+Local lAdd			:= .F. 
+
+Default cFilDoc		:= ""
+Default cDoc		:= ""
+Default cSerie		:= ""
+
+oMdlDM3:GoLine( oMdlDM3:Length() )
+
+If oMdlDM3:IsDeleted()
+	oMdlDM3:UnDeleteLine()
+	oMdlDM3:SetValue("DM3_FILDOC"	,"")
+	oMdlDM3:SetValue("DM3_DOC"		,"")
+	oMdlDM3:SetValue("DM3_SERIE"	,"")
+ElseIf ( oMdlDM3:Length() == 1 .And. oMdlDM3:IsUpdated() ) .Or. oMdlDM3:Length() > 1
+	lAdd	:= .T. 
+	oMdlDM3:AddLine()
+EndIf 
+
+lRet	:= Iif(lRet,oMdlDM3:SetValue("DM3_FILDOC"	,cFilDoc),.F.)
+lRet	:= Iif(lRet,oMdlDM3:SetValue("DM3_DOC"		,cDoc),.F.)
+lRet	:= Iif(lRet,oMdlDM3:SetValue("DM3_SERIE"	,cSerie),.F.)
+
+If lRet
+	lRet	:= oMdlDM3:VldLineData()
+EndIf 
+
+If !lRet
+	oMdlDM3:SetValue("DM3_FILDOC"	,"")
+	oMdlDM3:SetValue("DM3_DOC"		,"")
+	oMdlDM3:SetValue("DM3_SERIE"	,"")
+	If lAdd
+		oMdlDM3:DeleteLine()
+	EndIf 
+EndIf 
+
+oView:Refresh()
+
+Return lRet 
